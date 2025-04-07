@@ -10,32 +10,32 @@ import { extractPredicates } from './predicateExtactor';
 
 export class ForgeExprEvaluatorUtil {
 
-	datum: DatumParsed;
-	predicates: Predicate[];
-	forgeListener : ForgeListenerImpl = new ForgeListenerImpl();
-	walker : ParseTreeWalker = new ParseTreeWalker();
-	gotPredicateParseTrees;
+  datum: DatumParsed;
+  predicates: Predicate[];
+  forgeListener : ForgeListenerImpl = new ForgeListenerImpl();
+  walker : ParseTreeWalker = new ParseTreeWalker();
+  gotPredicateParseTrees;
 
-	constructor(datum: DatumParsed, sourceCode: string) {
-		this.datum = datum;
-		this.predicates = extractPredicates(sourceCode);
-		this.gotPredicateParseTrees = false;
-	}
+  constructor(datum: DatumParsed, sourceCode: string) {
+    this.datum = datum;
+    this.predicates = extractPredicates(sourceCode);
+    this.gotPredicateParseTrees = false;
+  }
 
   getPredParseTree(forgePred: string) {
-		const inputStream = CharStreams.fromString(forgePred);
-		const lexer = new ForgeLexer(inputStream);
-		const tokenStream = new CommonTokenStream(lexer);
-		const parser = new ForgeParser(tokenStream);
-		parser.buildParseTree = true;
+    const inputStream = CharStreams.fromString(forgePred);
+    const lexer = new ForgeLexer(inputStream);
+    const tokenStream = new CommonTokenStream(lexer);
+    const parser = new ForgeParser(tokenStream);
+    parser.buildParseTree = true;
 
-		// Parse the input using the new entry point
-		const tree = parser.predDecl();
+    // Parse the input using the new entry point
+    const tree = parser.predDecl();
 
-		return tree;
-	}
+    return tree;
+  }
 
-	getExpressionParseTree(forgeExpr: string) {
+  getExpressionParseTree(forgeExpr: string) {
     const inputStream = CharStreams.fromString(forgeExpr);
     const lexer = new ForgeLexer(inputStream);
     const tokenStream = new CommonTokenStream(lexer);
@@ -46,27 +46,27 @@ export class ForgeExprEvaluatorUtil {
     const tree = parser.parseExpr();
     
     return tree;
-	}
+  }
 
   private getPredicateParseTrees() {
-		for (const predicate of this.predicates) {
-			const tree = this.getPredParseTree(predicate.predicateString);
-			predicate.predTree = tree;
-		}
-		this.gotPredicateParseTrees = true;
-	}
+    for (const predicate of this.predicates) {
+      const tree = this.getPredParseTree(predicate.predicateString);
+      predicate.predTree = tree;
+    }
+    this.gotPredicateParseTrees = true;
+  }
 
-	evaluateExpression(forgeExpr: string, instanceIndex: number = 0) {
-		// get the parse trees for all the predicates before we do anything else
-		if (!this.gotPredicateParseTrees) {
-			this.getPredicateParseTrees();
-		}
+  evaluateExpression(forgeExpr: string, instanceIndex: number = 0) {
+    // get the parse trees for all the predicates before we do anything else
+    if (!this.gotPredicateParseTrees) {
+      this.getPredicateParseTrees();
+    }
 
-		// now, we can actually evaluate the expression
+    // now, we can actually evaluate the expression
     const tree = this.getExpressionParseTree(forgeExpr);
     const evaluator = new ForgeExprEvaluator(this.datum, instanceIndex, this.predicates);
 
-		// ensure we're visiting an ExprContext
-		return evaluator.visit(tree instanceof ExprContext ? tree : tree.getChild(0));
-	}
+    // ensure we're visiting an ExprContext
+    return evaluator.visit(tree instanceof ExprContext ? tree : tree.getChild(0));
+  }
 }
