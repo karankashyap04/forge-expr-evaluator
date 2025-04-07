@@ -8,10 +8,8 @@ export type Predicate = {
   predTree?: PredDeclContext; // parse tree of the predicate
 }
 
-// // the following type is used to be a generic version of the DatumParsed used
-// // by Sterling. Specifically, it mandates the requirement for instance data,
-// // but allows for additional fields to also be provided. Passing in the
-// // DatumParsed object that is available in Sterling should work fine with this.
+// The following type is used to be a generic version of the DatumParsed used by Sterling.
+// Passing in the DatumParsed object that is available in Sterling should work fine with this.
 export interface DatumParsed {
   parsed: ParsedValue;
   data: string;
