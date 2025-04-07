@@ -1,0 +1,29 @@
+{
+  "name": "forge-expr-evaluator",
+  "version": "1.0.0",
+  "description": "\"Typescript evaluator for Forge expressions\"",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "Karan Kashyap",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "antlr4ts-cli": "^0.5.0-alpha.4",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.3.1",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^22.14.0",
+    "antlr4ts": "^0.5.0-alpha.4",
+    "entities": "^6.0.0",
+    "lodash": "^4.17.21"
+  }
+}
