@@ -19,7 +19,6 @@ function getCodeFromDatum(datum: DatumParsed): string {
   if (content === null) {
     throw new Error("No content attribute found in source element");
   }
-  console.log("content:", content);
   return content;
 }
 
