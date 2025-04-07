@@ -1,0 +1,392 @@
+{
+  "buttons": [
+    {
+      "mouseover": "(Get next instance)",
+      "onClick": "next",
+      "text": "Next"
+    }
+  ],
+  "data": "<alloy builddate=\"Friday, April 4th, 2025\">\n<instance bitwidth=\"4\" maxseq=\"-1\" command=\"temporary-name_ttt_1\" filename=\"/Users/karankashyap/Desktop/ttt.frg\" version=\"4.1\"  >\n\n<sig label=\"seq/Int\" ID=\"0\" parentID=\"1\" builtin=\"yes\">\n</sig>\n\n<sig label=\"Int\" ID=\"1\" parentID=\"2\" builtin=\"yes\">\n\n</sig>\n\n<sig label=\"univ\" ID=\"2\" builtin=\"yes\">\n</sig>\n\n<field label=\"no-field-guard\" ID=\"3\" parentID=\"2\">\n<types> <type ID=\"2\"/><type ID=\"2\"/> </types>\n</field>\n\n<sig label=\"Board\" ID=\"4\" parentID=\"2\">\n<atom label=\"Board0\"/><atom label=\"Board1\"/><atom label=\"Board2\"/><atom label=\"Board3\"/><atom label=\"Board4\"/><atom label=\"Board5\"/><atom label=\"Board6\"/>\n</sig>\n\n<sig label=\"Player\" ID=\"5\" parentID=\"2\">\n\n</sig>\n\n<sig label=\"X\" ID=\"6\" parentID=\"5\">\n<atom label=\"X0\"/>\n</sig>\n\n<sig label=\"Game\" ID=\"7\" parentID=\"2\">\n<atom label=\"Game0\"/>\n</sig>\n\n<sig label=\"O\" ID=\"8\" parentID=\"5\">\n<atom label=\"O0\"/>\n</sig>\n\n<field label=\"next\" ID=\"9\" parentID=\"7\">\n<tuple><atom label=\"Game0\"/><atom label=\"Board0\"/><atom label=\"Board1\"/></tuple>\n<tuple><atom label=\"Game0\"/><atom label=\"Board1\"/><atom label=\"Board2\"/></tuple>\n<tuple><atom label=\"Game0\"/><atom label=\"Board2\"/><atom label=\"Board3\"/></tuple>\n<tuple><atom label=\"Game0\"/><atom label=\"Board3\"/><atom label=\"Board4\"/></tuple>\n<tuple><atom label=\"Game0\"/><atom label=\"Board4\"/><atom label=\"Board5\"/></tuple>\n<tuple><atom label=\"Game0\"/><atom label=\"Board5\"/><atom label=\"Board6\"/></tuple>\n<types><type ID=\"7\"/><type ID=\"4\"/><type ID=\"4\"/></types>\n\n</field>\n\n<field label=\"initialState\" ID=\"10\" parentID=\"7\">\n<tuple><atom label=\"Game0\"/><atom label=\"Board0\"/></tuple>\n<types><type ID=\"7\"/><type ID=\"4\"/></types>\n\n</field>\n\n<field label=\"board\" ID=\"11\" parentID=\"4\">\n<tuple><atom label=\"Board1\"/><atom label=\"1\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board2\"/><atom label=\"0\"/><atom label=\"2\"/><atom label=\"O0\"/></tuple>\n<tuple><atom label=\"Board2\"/><atom label=\"1\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board3\"/><atom label=\"0\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board3\"/><atom label=\"0\"/><atom label=\"2\"/><atom label=\"O0\"/></tuple>\n<tuple><atom label=\"Board3\"/><atom label=\"1\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board4\"/><atom label=\"0\"/><atom label=\"0\"/><atom label=\"O0\"/></tuple>\n<tuple><atom label=\"Board4\"/><atom label=\"0\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board4\"/><atom label=\"0\"/><atom label=\"2\"/><atom label=\"O0\"/></tuple>\n<tuple><atom label=\"Board4\"/><atom label=\"1\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board5\"/><atom label=\"0\"/><atom label=\"0\"/><atom label=\"O0\"/></tuple>\n<tuple><atom label=\"Board5\"/><atom label=\"0\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board5\"/><atom label=\"0\"/><atom label=\"2\"/><atom label=\"O0\"/></tuple>\n<tuple><atom label=\"Board5\"/><atom label=\"1\"/><atom label=\"0\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board5\"/><atom label=\"1\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board6\"/><atom label=\"0\"/><atom label=\"0\"/><atom label=\"O0\"/></tuple>\n<tuple><atom label=\"Board6\"/><atom label=\"0\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board6\"/><atom label=\"0\"/><atom label=\"2\"/><atom label=\"O0\"/></tuple>\n<tuple><atom label=\"Board6\"/><atom label=\"1\"/><atom label=\"0\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board6\"/><atom label=\"1\"/><atom label=\"1\"/><atom label=\"X0\"/></tuple>\n<tuple><atom label=\"Board6\"/><atom label=\"2\"/><atom label=\"0\"/><atom label=\"O0\"/></tuple>\n<types><type ID=\"4\"/><type ID=\"1\"/><type ID=\"1\"/><type ID=\"5\"/></types>\n\n</field>\n\n\n</instance>\n\n<source filename=\"/Users/karankashyap/Desktop/ttt.frg\" content=\"#lang forge\r&#xA;// #lang forge/bsl\r&#xA;\r&#xA;/*\r&#xA;  Tic-tac-toe boards, moves, and games\r&#xA;  Taken from CSCI 1710 Livecode\r&#xA;*/\r&#xA;\r&#xA;abstract sig Player {}\r&#xA;one sig X, O extends Player {}\r&#xA;\r&#xA;sig Board {\r&#xA;    board: pfunc Int -&amp;gt; Int -&amp;gt; Player\r&#xA;}\r&#xA;\r&#xA;pred wellformed[b: Board] {\r&#xA;    all row, col: Int | {\r&#xA;        (row &amp;lt; 0 or row &amp;gt; 2 or col &amp;lt; 0 or col &amp;gt; 2) implies\r&#xA;        no b.board[row][col]\r&#xA;    }\r&#xA;}\r&#xA;\r&#xA;pred Xturn[b: Board] {\r&#xA;    -- same number of X and O on board\r&#xA;    #{row, col: Int | b.board[row][col] = X} = \r&#xA;    #{row, col: Int | b.board[row][col] = O}\r&#xA;}\r&#xA;\r&#xA;pred Oturn[b: Board] {\r&#xA;    #{row, col: Int | b.board[row][col] = X} = \r&#xA;    add[#{row, col: Int | b.board[row][col] = O}, 1]\r&#xA;}\r&#xA;pred balanced[b: Board] {\r&#xA;    Oturn[b] or Xturn[b]\r&#xA;}\r&#xA;\r&#xA;pred winRow[b: Board, p: Player] {\r&#xA;    some row: Int | {\r&#xA;        b.board[row][0] = p\r&#xA;        b.board[row][1] = p\r&#xA;        b.board[row][2] = p\r&#xA;    }\r&#xA;}\r&#xA;\r&#xA;pred winCol[b: Board, p: Player] {\r&#xA;    some col: Int | {\r&#xA;        b.board[0][col] = p\r&#xA;        b.board[1][col] = p\r&#xA;        b.board[2][col] = p\r&#xA;    }\r&#xA;}\r&#xA;\r&#xA;\r&#xA;pred winner[b: Board, p: Player] {\r&#xA;    winRow[b, p]\r&#xA;    or \r&#xA;    winCol[b, p]\r&#xA;    or {\r&#xA;      b.board[0][0] = p\r&#xA;      b.board[1][1] = p\r&#xA;      b.board[2][2] = p\r&#xA;    } or {\r&#xA;      b.board[0][2] = p\r&#xA;      b.board[1][1] = p\r&#xA;      b.board[2][0] = p\r&#xA;    }\r&#xA;}\r&#xA;\r&#xA;-------------------------------------------------\r&#xA;-- Games\r&#xA;\r&#xA;pred starting[b: Board] {\r&#xA;    all row, col: Int | \r&#xA;        no b.board[row][col]\r&#xA;}\r&#xA;\r&#xA;pred move[pre: Board, post: Board, row: Int, col: Int, p: Player] {\r&#xA;    -- GUARD (what needs to hold about the pre-state?)\r&#xA;    no pre.board[row][col] -- no move already there\r&#xA;    p = X implies Xturn[pre] -- appropriate turn\r&#xA;    p = O implies Oturn[pre]  \r&#xA;    -- What else might we want to add here?\r&#xA;\r&#xA;    -- ACTION (what does the post-state then look like?)\r&#xA;    post.board[row][col] = p\r&#xA;    all row2: Int, col2: Int | (row!=row2 or col!=col2) implies {                \r&#xA;        post.board[row2][col2] = pre.board[row2][col2]     \r&#xA;    }  \r&#xA;}\r&#xA;\r&#xA;one sig Game {\r&#xA;  initialState: one Board,\r&#xA;  next: pfunc Board -&amp;gt; Board\r&#xA;}\r&#xA;\r&#xA;pred traces {\r&#xA;    starting[Game.initialState]\r&#xA;    all b: Board | some Game.next[b] implies {\r&#xA;        some row, col: Int, p: Player | \r&#xA;            move[b, Game.next[b], row, col, p]\r&#xA;    }\r&#xA;    -- Is there anything else we might want to add, here?\r&#xA;}\r&#xA;\r&#xA;pred argPred1[x: Int, y: Int] {\r&#xA;    x = y\r&#xA;    y = 3\r&#xA;}\r&#xA;\r&#xA;pred argPred2[x: Int, y: Int] {\r&#xA;    x = y\r&#xA;    argPred1[2, add[x, 1]]\r&#xA;}\r&#xA;\r&#xA;pred dummy {\r&#xA;    true\r&#xA;    false\r&#xA;    2 &amp;gt; 1\r&#xA;}\r&#xA;\r&#xA;run {\r&#xA;    all b: Board | wellformed[b]\r&#xA;    traces\r&#xA;} for exactly 7 Board, 4 Int for {next is linear}\r&#xA;\r&#xA;\r&#xA;// #lang froglet \r&#xA;\r&#xA;// abstract sig Player {}\r&#xA;// one sig X, O extends Player {}\r&#xA;\r&#xA;// sig Board {\r&#xA;//   board : pfunc Int -&amp;gt; Int -&amp;gt; Player \r&#xA;// }\r&#xA;\r&#xA;// -- a Board is well-formed if and only if:\r&#xA;// pred wellformed[s: Board] {\r&#xA;//   -- row and column numbers used are between 0 and 2, inclusive  \r&#xA;//   all row, col: Int | {\r&#xA;//     (row &amp;lt; 0 or row &amp;gt; 2 or col &amp;lt; 0 or col &amp;gt; 2) \r&#xA;//       implies no s.board[row][col]      \r&#xA;//   }\r&#xA;// }\r&#xA;\r&#xA;// run { some b : Board | wellformed[b] }\r&#xA;\r&#xA;// // pred starting[s: Board] {\r&#xA;// //   all row, col: Int | \r&#xA;// //     no s.board[row][col]\r&#xA;// // }\r&#xA;\r&#xA;// // pred XTurn[s: Board] {\r&#xA;// //   #{row, col: Int | s.board[row][col] = X} =\r&#xA;// //   #{row, col: Int | s.board[row][col] = O}\r&#xA;// // }\r&#xA;\r&#xA;// // pred OTurn[s: Board] {\r&#xA;// //   #{row, col: Int | s.board[row][col] = X} =\r&#xA;// //   add[#{row, col: Int | s.board[row][col] = O}, 1]\r&#xA;// // }\r&#xA;\r&#xA;// // pred winRow[s: Board, p: Player] {\r&#xA;// //   -- note we cannot use `all` here because there are more Ints  \r&#xA;// //   some row: Int | {\r&#xA;// //     s.board[row][0] = p\r&#xA;// //     s.board[row][1] = p\r&#xA;// //     s.board[row][2] = p\r&#xA;// //   }\r&#xA;// // }\r&#xA;\r&#xA;// // pred winCol[s: Board, p: Player] {\r&#xA;// //   some column: Int | {\r&#xA;// //     s.board[0][column] = p\r&#xA;// //     s.board[1][column] = p\r&#xA;// //     s.board[2][column] = p\r&#xA;// //   }      \r&#xA;// // }\r&#xA;\r&#xA;// // pred winner[s: Board, p: Player] {\r&#xA;// //   winRow[s, p]\r&#xA;// //   or\r&#xA;// //   winCol[s, p]\r&#xA;// //   or \r&#xA;// //   {\r&#xA;// //     s.board[0][0] = p\r&#xA;// //     s.board[1][1] = p\r&#xA;// //     s.board[2][2] = p\r&#xA;// //   }\r&#xA;// //   or\r&#xA;// //   {\r&#xA;// //     s.board[0][2] = p\r&#xA;// //     s.board[1][1] = p\r&#xA;// //     s.board[2][0] = p\r&#xA;// //   }  \r&#xA;// // }\r&#xA;\r&#xA;// // pred balanced[s: Board] {\r&#xA;// //   XTurn[s] or OTurn[s]\r&#xA;// // }\r&#xA;\r&#xA;// // // run { all b: Board | wellformed[b] and balanced[b]} for exactly 1 Board \r&#xA;\r&#xA;// // // run {\r&#xA;// // //   all b : Board | {\r&#xA;// // //     wellformed[b]\r&#xA;// // //     balanced[b]\r&#xA;// // //     winner[b, X]\r&#xA;// // //   }\r&#xA;// // // } for exactly 1 Board\r&#xA;\r&#xA;// // pred move[pre: Board, post: Board, row: Int, col: Int, p: Player] {\r&#xA;// //   -- guard:\r&#xA;// //   no pre.board[row][col]   -- nobody's moved there yet\r&#xA;// //   p = X implies XTurn[pre] -- appropriate turn\r&#xA;// //   p = O implies OTurn[pre]  \r&#xA;// //   row &amp;gt;= 0 and row &amp;lt;= 2    -- row number is valid\r&#xA;// //   col &amp;gt;= 0 and col &amp;lt;= 2    -- column number is valid\r&#xA;  \r&#xA;// //   -- action:\r&#xA;// //   post.board[row][col] = p\r&#xA;// //   all row2: Int, col2: Int | ((row!=row2) or (col!=col2)) implies {        \r&#xA;// //      post.board[row2][col2] = pre.board[row2][col2]     \r&#xA;// //   }  \r&#xA;// // }\r&#xA;\r&#xA;// // // run {\r&#xA;// // //   some pre, post: Board | {\r&#xA;// // //     wellformed[pre]\r&#xA;// // //     not wellformed[post]\r&#xA;// // //     some row, col: Int, p: Player | {\r&#xA;// // //       move[pre, post, row, col, p]\r&#xA;// // //     }\r&#xA;// // //    }\r&#xA;// // // } for 2 Board\r&#xA;\r&#xA;\r&#xA;// // one sig Game {\r&#xA;// //   initialState: one Board,\r&#xA;// //   next: pfunc Board -&amp;gt; Board\r&#xA;// // }\r&#xA;\r&#xA;// // pred traces {\r&#xA;// //     -- The trace starts with an initial state\r&#xA;// //     starting[Game.initialState]\r&#xA;// //     no sprev: Board | Game.next[sprev] = Game.initialState\r&#xA;// //     -- Every transition is a valid move\r&#xA;// //     all s: Board | some Game.next[s] implies {\r&#xA;// //       some row, col: Int, p: Player |\r&#xA;// //         move[s, Game.next[s], row, col, p]\r&#xA;// //     }\r&#xA;// // }\r&#xA;\r&#xA;// // run {\r&#xA;// //   traces\r&#xA;// // } for exactly 10 Board for {next is linear}\r&#xA;\"></source>\n</alloy>",
+  "evaluator": true,
+  "format": "alloy",
+  "generatorName": "temporary-name_ttt_1",
+  "id": "1",
+  "parsed": {
+    "instances": [
+      {
+        "types": {
+          "seq/Int": {
+            "_": "type",
+            "id": "seq/Int",
+            "types": ["seq/Int", "Int"],
+            "atoms": [],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "Int": {
+            "_": "type",
+            "id": "Int",
+            "types": ["Int"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "-8",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-7",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-6",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-5",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-4",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-3",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-2",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-1",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "0",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "1",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "2",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "3",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "4",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "5",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "6",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "7",
+                "type": "Int"
+              }
+            ],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "univ": {
+            "_": "type",
+            "id": "univ",
+            "types": [],
+            "atoms": [],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "Board": {
+            "_": "type",
+            "id": "Board",
+            "types": ["Board"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "Board0",
+                "type": "Board"
+              },
+              {
+                "_": "atom",
+                "id": "Board1",
+                "type": "Board"
+              },
+              {
+                "_": "atom",
+                "id": "Board2",
+                "type": "Board"
+              },
+              {
+                "_": "atom",
+                "id": "Board3",
+                "type": "Board"
+              },
+              {
+                "_": "atom",
+                "id": "Board4",
+                "type": "Board"
+              },
+              {
+                "_": "atom",
+                "id": "Board5",
+                "type": "Board"
+              },
+              {
+                "_": "atom",
+                "id": "Board6",
+                "type": "Board"
+              }
+            ]
+          },
+          "Player": {
+            "_": "type",
+            "id": "Player",
+            "types": ["Player"],
+            "atoms": []
+          },
+          "X": {
+            "_": "type",
+            "id": "X",
+            "types": ["X", "Player"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "X0",
+                "type": "X"
+              }
+            ]
+          },
+          "Game": {
+            "_": "type",
+            "id": "Game",
+            "types": ["Game"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "Game0",
+                "type": "Game"
+              }
+            ]
+          },
+          "O": {
+            "_": "type",
+            "id": "O",
+            "types": ["O", "Player"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "O0",
+                "type": "O"
+              }
+            ]
+          }
+        },
+        "relations": {
+          "univ<:no-field-guard": {
+            "_": "relation",
+            "id": "univ<:no-field-guard",
+            "name": "no-field-guard",
+            "types": ["univ", "univ"],
+            "tuples": []
+          },
+          "Game<:next": {
+            "_": "relation",
+            "id": "Game<:next",
+            "name": "next",
+            "types": ["Game", "Board", "Board"],
+            "tuples": [
+              {
+                "_": "tuple",
+                "types": ["Game", "Board", "Board"],
+                "atoms": ["Game0", "Board0", "Board1"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Game", "Board", "Board"],
+                "atoms": ["Game0", "Board1", "Board2"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Game", "Board", "Board"],
+                "atoms": ["Game0", "Board2", "Board3"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Game", "Board", "Board"],
+                "atoms": ["Game0", "Board3", "Board4"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Game", "Board", "Board"],
+                "atoms": ["Game0", "Board4", "Board5"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Game", "Board", "Board"],
+                "atoms": ["Game0", "Board5", "Board6"]
+              }
+            ]
+          },
+          "Game<:initialState": {
+            "_": "relation",
+            "id": "Game<:initialState",
+            "name": "initialState",
+            "types": ["Game", "Board"],
+            "tuples": [
+              {
+                "_": "tuple",
+                "types": ["Game", "Board"],
+                "atoms": ["Game0", "Board0"]
+              }
+            ]
+          },
+          "Board<:board": {
+            "_": "relation",
+            "id": "Board<:board",
+            "name": "board",
+            "types": ["Board", "Int", "Int", "Player"],
+            "tuples": [
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board1", "1", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board2", "0", "2", "O0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board2", "1", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board3", "0", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board3", "0", "2", "O0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board3", "1", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board4", "0", "0", "O0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board4", "0", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board4", "0", "2", "O0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board4", "1", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board5", "0", "0", "O0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board5", "0", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board5", "0", "2", "O0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board5", "1", "0", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board5", "1", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board6", "0", "0", "O0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board6", "0", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board6", "0", "2", "O0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board6", "1", "0", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board6", "1", "1", "X0"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Board", "Int", "Int", "Player"],
+                "atoms": ["Board6", "2", "0", "O0"]
+              }
+            ]
+          }
+        },
+        "skolems": {}
+      }
+    ],
+    "bitwidth": 4,
+    "command": "temporary-name_ttt_1",
+    "maxSeq": -1,
+    "visualizerConfig": {}
+  }
+}
