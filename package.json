@@ -1,12 +1,14 @@
 {
   "name": "forge-expr-evaluator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "\"Typescript evaluator for Forge expressions\"",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "directories": {
     "test": "test"
   },
   "scripts": {
+    "build": "tsc",
     "test": "jest"
   },
   "author": "Karan Kashyap",
