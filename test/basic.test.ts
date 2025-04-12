@@ -50,4 +50,76 @@ describe("forge-expr-evaluator", () => {
 
     expect(result).toEqual([["O0"]]);
   });
+
+  it("can evaluate Int qualName", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "Int";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual([
+      ["-8"],
+      ["-7"],
+      ["-6"],
+      ["-5"],
+      ["-4"],
+      ["-3"],
+      ["-2"],
+      ["-1"],
+      ["0"],
+      ["1"],
+      ["2"],
+      ["3"],
+      ["4"],
+      ["5"],
+      ["6"],
+      ["7"],
+    ]);
+  });
+
+  it("can evaluate a set comprehension", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "{i, j: Int | some Board6.board[i][j]}";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual([
+      ["0", "0"],
+      ["0", "1"],
+      ["0", "2"],
+      ["1", "0"],
+      ["1", "1"],
+      ["2", "0"],
+    ]);
+  });
+
+  it("can evaluate cardinality on the result of a set comprehension", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "#{i, j: Int | some Board6.board[i][j]}";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toBe("6");
+  });
+
+  it("can evaluate a set comprehension over a set that isn't just `Int`", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "{i: X0 + O0 | true}";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual([["X0"], ["O0"]]);
+  })
 });

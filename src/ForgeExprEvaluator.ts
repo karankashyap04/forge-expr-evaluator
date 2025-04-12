@@ -25,7 +25,11 @@ import {
   ExprListContext,
   NameContext,
   PredDeclContext,
-  BlockContext
+  BlockContext,
+  QualNameContext,
+  QuantDeclListContext,
+  NameListContext,
+  QuantDeclContext
 } from './forge-antlr/ForgeParser';
 import { Atom, DatumParsed, ForgeTuple, InstanceData } from './types';
 import { Predicate } from './types';
@@ -78,6 +82,21 @@ function deduplicateTuples(tuples: Tuple[]): Tuple[] {
   return result;
 }
 
+function getCombinations(arrays: Tuple[][]): Tuple[] {
+  // first, turn each string[][] into a string[] by flattening
+  const valueSets: string[][] = arrays.map(tuple => tuple.flat());
+
+  // now, recursively compute the cartesian product
+  function cartesianProduct(arrays: string[][]): Tuple[] {
+    if (arrays.length === 0) return [[]];
+    const [first, ...rest] = arrays;
+    const restProduct = cartesianProduct(rest);
+    return first.flatMap(value => restProduct.map(product => [value, ...product]));
+  }
+
+  return cartesianProduct(valueSets);
+}
+
 /**
  * A recursive evaluator for Forge expressions.
  * This visitor walks the parse tree and prints the type of operation encountered.
@@ -91,6 +110,7 @@ export class ForgeExprEvaluator
   private instanceData: InstanceData;
   private predicates: Predicate[];
   private environmentStack: Environment[];
+  private quantDeclEnvironmentStack: Environment[];
 
   constructor(datum: DatumParsed, instanceIndex: number, predicates: Predicate[]) {
     super();
@@ -99,6 +119,7 @@ export class ForgeExprEvaluator
     this.instanceData = this.datum.parsed.instances[this.instanceIndex];
     this.predicates = predicates;
     this.environmentStack = [];
+    this.quantDeclEnvironmentStack = [];
   }
 
   // helper function
@@ -823,6 +844,7 @@ export class ForgeExprEvaluator
           } else {
             arg2 = getNumberValue(insideBracesExprs[1]);
           }
+          // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
           return `${arg1 + arg2}`;
         }
       }
@@ -846,6 +868,7 @@ export class ForgeExprEvaluator
           } else {
             arg2 = getNumberValue(insideBracesExprs[1]);
           }
+          // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
           return `${arg1 - arg2}`;
         }
       }
@@ -970,6 +993,59 @@ export class ForgeExprEvaluator
     return childrenResults;
   }
 
+  // helper function to get a list of names from a nameList
+  getNameListValues(ctx: NameListContext): string[] {
+    if (ctx.COMMA_TOK()) {
+      // there is a comma, so we need to get the value from the head of the list
+      // and then move onto the tail after that
+      const headValue = ctx.name().text;
+      const tailValues = this.getNameListValues(ctx.nameList()!);
+      return [headValue, ...tailValues];
+    } else {
+      // there is no comma so there is just a single name that we need to deal with here
+      return [ctx.name().text];
+    }
+  }
+
+  // helper function to get the values each var is bound to in a single quantDecl
+  getQuantDeclValues(ctx: QuantDeclContext): Record<string, Tuple[]> {
+    // NOTE: **UNIMPLEMENTED**: discuss use of `disj` with Tim
+    // const isDisjoint = quantDecl.DISJ_TOK() !== undefined;
+    const nameList = ctx.nameList();
+    const names = this.getNameListValues(nameList);
+    // NOTE: **UNIMPLEMENTED**: discuss use of `set` with Tim
+    const quantExpr = ctx.expr();
+    let exprValue = this.visitExpr(quantExpr);
+    if (isSingleValue(exprValue)) {
+      exprValue = [[exprValue]];
+    }
+    const quantDeclValues: Record<string, Tuple[]> = {};
+    for (const name of names) {
+      quantDeclValues[name] = exprValue;
+    }
+    return quantDeclValues;
+  }
+
+  // helper function to get the values each var is bound to in a quantDeclList
+  getQuantDeclListValues(ctx: QuantDeclListContext): Record<string, Tuple[]> {
+    if (ctx.COMMA_TOK()) {
+      // there is a comma, so we need to get the value from the head of the list
+      // and then move onto the tail after that
+      const head = ctx.quantDecl();
+      const tail = ctx.quantDeclList();
+      if (tail === undefined) {
+        throw new Error('expected a quantDeclList after the comma');
+      }
+      const headValue = this.getQuantDeclValues(head);
+      const tailValues = this.getQuantDeclListValues(tail);
+      return { ...headValue, ...tailValues };
+    } else {
+      // there is no comma so there is just a single quantDecl that we need to
+      // deal with here
+      return this.getQuantDeclValues(ctx.quantDecl());
+    }
+  } 
+
   visitExpr18(ctx: Expr18Context): EvalResult {
     console.log('visiting expr18:', ctx.text);
     let results: EvalResult = [];
@@ -994,12 +1070,54 @@ export class ForgeExprEvaluator
       throw new Error('`this` is Alloy specific; it is not supported by Forge!');
     }
     if (ctx.LEFT_CURLY_TOK()) {
-      results.push(['**UNIMPLEMENTED** Set Comprehension `{ ... }`']);
+      // first, we need to get the variables from the quantDeclList
+      if (ctx.quantDeclList() === undefined) {
+        throw new Error('expected a quantDeclList in the set comprehension!');
+      }
+      const varQuantifiedSets = this.getQuantDeclListValues(ctx.quantDeclList()!);
 
-      // TODO: need to get the values inside the braces and then
-      //       implement this using them
-      //       for now, just returning results
-      return results;
+      // NOTE: this doesn't support the situation in which blockOrBar is a block
+      // here (DISCUSS WITH Tim)
+      const blockOrBar = ctx.blockOrBar();
+      if (blockOrBar === undefined) {
+        throw new Error('expected a blockOrBar in the set comprehension!');
+      }
+      if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
+        throw new Error('expected a bar followed by an expr in the set comprehension!');
+      }
+      const barExpr = blockOrBar.expr()!;
+
+      const varNames: string[] = [];
+      const quantifiedSets: Tuple[][] = [];
+      for (const varName in varQuantifiedSets) {
+        varNames.push(varName);
+        quantifiedSets.push(varQuantifiedSets[varName]);
+      }
+      const product: Tuple[] = getCombinations(quantifiedSets);
+
+      const result: Tuple[] = [];
+
+      for (let i = 0; i < product.length; i++) {
+        const tuple = product[i];
+        const quantDeclEnv: Environment = {};
+        for (let j = 0; j < varNames.length; j++) {
+          const varName = varNames[j];
+          const varValue = tuple[j];
+          quantDeclEnv[varName] = varValue;
+        }
+
+        this.quantDeclEnvironmentStack.push(quantDeclEnv);
+
+        // now, we want to evaluate the barExpr
+        const barExprValue = this.visit(barExpr);
+        if (getBooleanValue(barExprValue)) { // will error if not boolean val, which we want
+          result.push(tuple);
+        }
+
+        this.quantDeclEnvironmentStack.pop();
+      }
+
+      return result;
     }
     if (ctx.LEFT_PAREN_TOK()) {
       // NOTE: we just return the result of evaluating the expr that is inside
@@ -1073,6 +1191,16 @@ export class ForgeExprEvaluator
         return this.callPredicate(predicate, []);
       }
     }
+
+    // if this is a var that has a value due to a quantDecl, get the value for
+    // the current combination of the space being searched
+    for (let i = this.quantDeclEnvironmentStack.length - 1; i >= 0; i--) {
+      const quantDeclEnv = this.quantDeclEnvironmentStack[i];
+      if (quantDeclEnv[identifier] !== undefined) {
+        return quantDeclEnv[identifier];
+      }
+    }
+
     // if this is an arg to the pred being evaluated, return it
     const latestEnvironment =
       this.environmentStack.length > 0
@@ -1161,5 +1289,18 @@ export class ForgeExprEvaluator
     }
 
     return identifier;
+  }
+
+  visitQualName(ctx: QualNameContext): EvalResult {
+    // NOTE: this currently only supports Int; doesn't support other branches
+    // of the qualName nonterminal
+    console.log('visiting qualName:', ctx.text);
+
+    if (ctx.INT_TOK()) {
+      const intVals = this.instanceData.types.Int.atoms.map((atom: Atom) => [atom.id]);
+      return intVals;
+    }
+
+    return this.visitChildren(ctx);
   }
 }
