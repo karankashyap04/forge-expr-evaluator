@@ -11,7 +11,7 @@ export interface DatumParsed {
     data: string;
     [key: string]: any;
 }
-interface ParsedValue {
+export interface ParsedValue {
     instances: InstanceData[];
     bitwidth: number;
     [key: string]: any;
@@ -28,7 +28,7 @@ export interface InstanceData {
     };
     skolems: any;
 }
-interface BuiltinType {
+export interface BuiltinType {
     "_": string;
     id: string;
     types: string[];
@@ -37,7 +37,7 @@ interface BuiltinType {
         builtin: boolean;
     };
 }
-interface Sig {
+export interface Sig {
     "_": string;
     id: string;
     types: string[];
@@ -48,7 +48,7 @@ export interface Atom {
     id: string;
     type: string;
 }
-interface Relation {
+export interface Relation {
     "_": string;
     id: string;
     name: string;
@@ -60,4 +60,3 @@ export interface ForgeTuple {
     types: string[];
     atoms: string[];
 }
-export {};
