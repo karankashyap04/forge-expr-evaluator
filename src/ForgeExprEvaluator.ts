@@ -68,14 +68,28 @@ function getNumberValue(value: EvalResult): number {
   throw new Error('Expected value to be a number');
 }
 
-function arraysEqual(a: Tuple, b: Tuple): boolean {
+function areTuplesEqual(a: Tuple, b: Tuple): boolean {
   return a.length === b.length && a.every((val, i) => val === b[i]);
+}
+
+function isTupleArraySubset(a: Tuple[], b: Tuple[]): boolean {
+  return a.every(tupleA => b.some(tupleB => areTuplesEqual(tupleA, tupleB)));
+}
+
+function areTupleArraysEqual(a: Tuple[], b: Tuple[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return (
+    isTupleArraySubset(a, b) &&
+    isTupleArraySubset(b, a)
+  )
 }
 
 function deduplicateTuples(tuples: Tuple[]): Tuple[] {
   const result: Tuple[] = [];
   for (const tuple of tuples) {
-    if (!result.some(existing => arraysEqual(existing, tuple))) {
+    if (!result.some(existing => areTuplesEqual(existing, tuple))) {
       result.push(tuple);
     }
   }
@@ -485,8 +499,11 @@ export class ForgeExprEvaluator
     }
     if (ctx.compareOp()) {
       foundValue = true;
+      if (ctx.expr6() === undefined || ctx.expr7() === undefined) {
+        throw new Error('Expected the compareOp to have 2 operands!');
+      }
       const leftChildValue = this.visit(ctx.expr6()!);
-      const rightChildValue = this.visitChildren(ctx);
+      const rightChildValue = this.visit(ctx.expr7()!);
       console.log('left child value:', leftChildValue);
       console.log('right child value:', rightChildValue);
       switch (ctx.compareOp()?.text) {
@@ -531,20 +548,17 @@ export class ForgeExprEvaluator
         case 'in':
           // this should be true if the left value is equal to the right value,
           // or a subset of it
-          if (leftChildValue === rightChildValue) {
-            results = '#t';
-          } else if (isTupleArray(rightChildValue)) {
-            if (isSingleValue(leftChildValue)) {
-              results = rightChildValue.some((tuple) => tuple.length === 1 && tuple[0] === leftChildValue) ? '#t' : '#f';
+          if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
+            if (areTupleArraysEqual(leftChildValue, rightChildValue)) {
+              results = "#t";
             } else {
-              results = leftChildValue.every((tuple) =>
-                rightChildValue.includes(tuple)
-              )
-                ? '#t'
-                : '#f';
+              // check if left is subset of right
+              results = isTupleArraySubset(leftChildValue, rightChildValue) ? '#t' : '#f';
             }
-          } else {
-            results = '#f';
+          } else if (isTupleArray(rightChildValue)) {
+            results = rightChildValue.some((tuple) => tuple.length === 1 && tuple[0] === leftChildValue) ? '#t' : '#f';
+          } else { // left is a tuple array but right is a single value, so false
+            results = "#f";
           }
           break;
         case 'is':
@@ -695,7 +709,7 @@ export class ForgeExprEvaluator
           return leftChildValue;
         }
         if (leftChildValue[0].length === rightChildValue[0].length) {
-          return leftChildValue.filter((tuple) => !rightChildValue.some((rightTuple) => arraysEqual(tuple, rightTuple)));
+          return leftChildValue.filter((tuple) => !rightChildValue.some((rightTuple) => areTuplesEqual(tuple, rightTuple)));
         }
       } else {
         throw new Error('unexpected error: expressions subtracted are not well defined!');
@@ -761,7 +775,7 @@ export class ForgeExprEvaluator
           return [];
         }
         if (leftChildValue[0].length === rightChildValue[0].length) {
-          return leftChildValue.filter((tuple) => rightChildValue.some((rightTuple) => arraysEqual(tuple, rightTuple)));
+          return leftChildValue.filter((tuple) => rightChildValue.some((rightTuple) => areTuplesEqual(tuple, rightTuple)));
         }
       } else {
         throw new Error('unexpected error: expressions intersected are not well defined!');
