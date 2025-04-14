@@ -35,6 +35,12 @@ import { Atom, DatumParsed, ForgeTuple, InstanceData } from './types';
 import { Predicate } from './types';
 import { isArray } from 'lodash';
 
+
+
+const TRUE_LITERAL = '#t';
+const FALSE_LITERAL = '#f';
+
+
 ///// DEFINING SOME USEFUL TYPES /////
 type SingleValue = string; // maybe this can be a number too?
 export type Tuple = SingleValue[];
@@ -52,10 +58,10 @@ function isTupleArray(value: EvalResult): value is Tuple[] {
 }
 
 function getBooleanValue(value: EvalResult): boolean {
-  if (value === 'true' || value === '#t') {
+  if (value === 'true' || value === TRUE_LITERAL) {
     return true;
   }
-  if (value === 'false' || value === '#f') {
+  if (value === 'false' || value === FALSE_LITERAL) {
     return false;
   }
   throw new Error('Expected value to be boolean');
@@ -68,14 +74,28 @@ function getNumberValue(value: EvalResult): number {
   throw new Error('Expected value to be a number');
 }
 
-function arraysEqual(a: Tuple, b: Tuple): boolean {
+function areTuplesEqual(a: Tuple, b: Tuple): boolean {
   return a.length === b.length && a.every((val, i) => val === b[i]);
+}
+
+function isTupleArraySubset(a: Tuple[], b: Tuple[]): boolean {
+  return a.every(tupleA => b.some(tupleB => areTuplesEqual(tupleA, tupleB)));
+}
+
+function areTupleArraysEqual(a: Tuple[], b: Tuple[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return (
+    isTupleArraySubset(a, b) &&
+    isTupleArraySubset(b, a)
+  )
 }
 
 function deduplicateTuples(tuples: Tuple[]): Tuple[] {
   const result: Tuple[] = [];
   for (const tuple of tuples) {
-    if (!result.some(existing => arraysEqual(existing, tuple))) {
+    if (!result.some(existing => areTuplesEqual(existing, tuple))) {
       result.push(tuple);
     }
   }
@@ -225,7 +245,7 @@ export class ForgeExprEvaluator
       } else {
         const resultBool = getBooleanValue(result);
         const exprBool = getBooleanValue(exprResult);
-        result = resultBool && exprBool ? '#t' : '#f';
+        result = resultBool && exprBool ? TRUE_LITERAL : FALSE_LITERAL;
       }
     }
     console.log('returning from block:', result);
@@ -282,7 +302,7 @@ export class ForgeExprEvaluator
       const leftBool = getBooleanValue(leftChildValue);
       const rightBool = getBooleanValue(rightChildValue);
 
-      return leftBool || rightBool ? '#t' : '#f';
+      return leftBool || rightBool ? TRUE_LITERAL : FALSE_LITERAL;
     }
 
     const childrenResults = this.visitChildren(ctx);
@@ -300,7 +320,7 @@ export class ForgeExprEvaluator
       const leftBool = getBooleanValue(leftChildValue);
       const rightBool = getBooleanValue(rightChildValue);
 
-      return leftBool !== rightBool ? '#t' : '#f';
+      return leftBool !== rightBool ? TRUE_LITERAL : FALSE_LITERAL;
     }
 
     const childrenResults = this.visitChildren(ctx);
@@ -318,7 +338,7 @@ export class ForgeExprEvaluator
       const leftBool = getBooleanValue(leftChildValue);
       const rightBool = getBooleanValue(rightChildValue);
 
-      return leftBool === rightBool ? '#t' : '#f';
+      return leftBool === rightBool ? TRUE_LITERAL : FALSE_LITERAL;
     }
 
     const childrenResults = this.visitChildren(ctx);
@@ -336,7 +356,7 @@ export class ForgeExprEvaluator
       const leftBool = getBooleanValue(leftChildValue);
       const rightBool = getBooleanValue(rightChildValue);
 
-      return !leftBool || rightBool ? '#t' : '#f';
+      return !leftBool || rightBool ? TRUE_LITERAL : FALSE_LITERAL;
     }
 
     const childrenResults = this.visitChildren(ctx);
@@ -354,7 +374,7 @@ export class ForgeExprEvaluator
       const leftBool = getBooleanValue(leftChildValue);
       const rightBool = getBooleanValue(rightChildValue);
 
-      return leftBool && rightBool ? '#t' : '#f';
+      return leftBool && rightBool ? TRUE_LITERAL : FALSE_LITERAL;
     }
 
     const childrenResults = this.visitChildren(ctx);
@@ -424,7 +444,7 @@ export class ForgeExprEvaluator
 
     if (ctx.NEG_TOK()) {
       const childValue = getBooleanValue(childrenResults);
-      return childValue ? '#f' : '#t';
+      return childValue ? FALSE_LITERAL : TRUE_LITERAL;
     }
     if (ctx.ALWAYS_TOK()) {
       results.push(['**UNIMPLEMENTED** Temporal Operator (`always`)']);
@@ -485,8 +505,11 @@ export class ForgeExprEvaluator
     }
     if (ctx.compareOp()) {
       foundValue = true;
+      if (ctx.expr6() === undefined || ctx.expr7() === undefined) {
+        throw new Error('Expected the compareOp to have 2 operands!');
+      }
       const leftChildValue = this.visit(ctx.expr6()!);
-      const rightChildValue = this.visitChildren(ctx);
+      const rightChildValue = this.visit(ctx.expr7()!);
       console.log('left child value:', leftChildValue);
       console.log('right child value:', rightChildValue);
       switch (ctx.compareOp()?.text) {
@@ -495,56 +518,53 @@ export class ForgeExprEvaluator
           // TODO: this equality implementation DOES NOT MATCH FORGE RIGHT NOW!!
           // THIS IS JUST A TEMPORARY JANKY THING TO TEST OUT SOME VIZ STUFF THAT RELIED ON EQUALITY
           if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
-            results = leftChildValue === rightChildValue ? '#t' : '#f';
+            results = leftChildValue === rightChildValue ? TRUE_LITERAL : FALSE_LITERAL;
           } else {
             results =
               JSON.stringify(leftChildValue) === JSON.stringify(rightChildValue)
-                ? '#t'
-                : '#f';
+                ? TRUE_LITERAL
+                : FALSE_LITERAL;
           }
           break;
         case '<':
           results =
             getNumberValue(leftChildValue) < getNumberValue(rightChildValue)
-              ? '#t'
-              : '#f';
+              ? TRUE_LITERAL
+              : FALSE_LITERAL;
           break;
         case '>':
           results =
             getNumberValue(leftChildValue) > getNumberValue(rightChildValue)
-              ? '#t'
-              : '#f';
+              ? TRUE_LITERAL
+              : FALSE_LITERAL;
           console.log('setting the result here:', results);
           break;
         case '<=':
           results =
             getNumberValue(leftChildValue) <= getNumberValue(rightChildValue)
-              ? '#t'
-              : '#f';
+              ? TRUE_LITERAL
+              : FALSE_LITERAL;
           break;
         case '>=':
           results =
             getNumberValue(leftChildValue) >= getNumberValue(rightChildValue)
-              ? '#t'
-              : '#f';
+              ? TRUE_LITERAL
+              : FALSE_LITERAL;
           break;
         case 'in':
           // this should be true if the left value is equal to the right value,
           // or a subset of it
-          if (leftChildValue === rightChildValue) {
-            results = '#t';
-          } else if (isTupleArray(rightChildValue)) {
-            if (isSingleValue(leftChildValue)) {
-              results = rightChildValue.some((tuple) => tuple.length === 1 && tuple[0] === leftChildValue) ? '#t' : '#f';
+          if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
+            if (areTupleArraysEqual(leftChildValue, rightChildValue)) {
+              results = TRUE_LITERAL;
             } else {
-              results = leftChildValue.every((tuple) =>
-                rightChildValue.includes(tuple)
-              )
-                ? '#t'
-                : '#f';
+              // check if left is subset of right
+              results = isTupleArraySubset(leftChildValue, rightChildValue) ? TRUE_LITERAL : FALSE_LITERAL;
             }
-          } else {
-            results = '#f';
+          } else if (isTupleArray(rightChildValue)) {
+            results = rightChildValue.some((tuple) => tuple.length === 1 && tuple[0] === leftChildValue) ? TRUE_LITERAL : FALSE_LITERAL;
+          } else { // left is a tuple array but right is a single value, so false
+            results = FALSE_LITERAL;
           }
           break;
         case 'is':
@@ -565,7 +585,7 @@ export class ForgeExprEvaluator
     }
 
     if (toNegate) {
-      return getBooleanValue(results) ? '#f' : '#t';
+      return getBooleanValue(results) ? FALSE_LITERAL : TRUE_LITERAL;
     }
 
     if (foundValue) {
@@ -588,30 +608,30 @@ export class ForgeExprEvaluator
     }
     if (ctx.ONE_TOK()) {
       if (isTupleArray(childrenResults) && childrenResults.length === 1) {
-        return "#t";
+        return TRUE_LITERAL;
       }
-      return "#f";
+      return FALSE_LITERAL;
     }
     if (ctx.TWO_TOK()) {
       throw new Error('**NOT IMPLEMENTING FOR NOW** Two (`two`)');
     }
     if (ctx.NO_TOK()) {
       if (isTupleArray(childrenResults) && childrenResults.length === 0) {
-        return "#t";
+        return TRUE_LITERAL;
       }
-      return "#f";
+      return FALSE_LITERAL;
     }
     if (ctx.SOME_TOK()) {
       if (isTupleArray(childrenResults) && childrenResults.length > 0) {
-        return "#t";
+        return TRUE_LITERAL;
       }
-      return "#f";
+      return FALSE_LITERAL;
     }
     if (ctx.LONE_TOK()) {
       if (isTupleArray(childrenResults) && childrenResults.length <= 1) {
-        return "#t";
+        return TRUE_LITERAL;
       }
-      return "#f";
+      return FALSE_LITERAL;
     }
 
     return childrenResults;
@@ -695,7 +715,7 @@ export class ForgeExprEvaluator
           return leftChildValue;
         }
         if (leftChildValue[0].length === rightChildValue[0].length) {
-          return leftChildValue.filter((tuple) => !rightChildValue.some((rightTuple) => arraysEqual(tuple, rightTuple)));
+          return leftChildValue.filter((tuple) => !rightChildValue.some((rightTuple) => areTuplesEqual(tuple, rightTuple)));
         }
       } else {
         throw new Error('unexpected error: expressions subtracted are not well defined!');
@@ -761,7 +781,7 @@ export class ForgeExprEvaluator
           return [];
         }
         if (leftChildValue[0].length === rightChildValue[0].length) {
-          return leftChildValue.filter((tuple) => rightChildValue.some((rightTuple) => arraysEqual(tuple, rightTuple)));
+          return leftChildValue.filter((tuple) => rightChildValue.some((rightTuple) => areTuplesEqual(tuple, rightTuple)));
         }
       } else {
         throw new Error('unexpected error: expressions intersected are not well defined!');
@@ -1184,10 +1204,10 @@ export class ForgeExprEvaluator
     const identifier = ctx.IDENTIFIER_TOK().text;
 
     if (identifier === 'true') {
-      return '#t';
+      return TRUE_LITERAL;
     }
     if (identifier === 'false') {
-      return '#f';
+      return FALSE_LITERAL;
     }
 
     console.log('need to find an identifier:', identifier);

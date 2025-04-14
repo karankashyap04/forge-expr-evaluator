@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ForgeExprEvaluator = void 0;
 const AbstractParseTreeVisitor_1 = require("antlr4ts/tree/AbstractParseTreeVisitor");
 const lodash_1 = require("lodash");
+const TRUE_LITERAL = '#t';
+const FALSE_LITERAL = '#f';
 ///// HELPER FUNCTIONS /////
 function isSingleValue(value) {
     return typeof value === 'string';
@@ -11,10 +13,10 @@ function isTupleArray(value) {
     return Array.isArray(value);
 }
 function getBooleanValue(value) {
-    if (value === 'true' || value === '#t') {
+    if (value === 'true' || value === TRUE_LITERAL) {
         return true;
     }
-    if (value === 'false' || value === '#f') {
+    if (value === 'false' || value === FALSE_LITERAL) {
         return false;
     }
     throw new Error('Expected value to be boolean');
@@ -25,13 +27,23 @@ function getNumberValue(value) {
     }
     throw new Error('Expected value to be a number');
 }
-function arraysEqual(a, b) {
+function areTuplesEqual(a, b) {
     return a.length === b.length && a.every((val, i) => val === b[i]);
+}
+function isTupleArraySubset(a, b) {
+    return a.every(tupleA => b.some(tupleB => areTuplesEqual(tupleA, tupleB)));
+}
+function areTupleArraysEqual(a, b) {
+    if (a.length !== b.length) {
+        return false;
+    }
+    return (isTupleArraySubset(a, b) &&
+        isTupleArraySubset(b, a));
 }
 function deduplicateTuples(tuples) {
     const result = [];
     for (const tuple of tuples) {
-        if (!result.some(existing => arraysEqual(existing, tuple))) {
+        if (!result.some(existing => areTuplesEqual(existing, tuple))) {
             result.push(tuple);
         }
     }
@@ -160,7 +172,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             else {
                 const resultBool = getBooleanValue(result);
                 const exprBool = getBooleanValue(exprResult);
-                result = resultBool && exprBool ? '#t' : '#f';
+                result = resultBool && exprBool ? TRUE_LITERAL : FALSE_LITERAL;
             }
         }
         console.log('returning from block:', result);
@@ -211,7 +223,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const rightChildValue = this.visitChildren(ctx);
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
-            return leftBool || rightBool ? '#t' : '#f';
+            return leftBool || rightBool ? TRUE_LITERAL : FALSE_LITERAL;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr1:', childrenResults);
@@ -224,7 +236,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const rightChildValue = this.visitChildren(ctx);
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
-            return leftBool !== rightBool ? '#t' : '#f';
+            return leftBool !== rightBool ? TRUE_LITERAL : FALSE_LITERAL;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr1_5:', childrenResults);
@@ -237,7 +249,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const rightChildValue = this.visitChildren(ctx);
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
-            return leftBool === rightBool ? '#t' : '#f';
+            return leftBool === rightBool ? TRUE_LITERAL : FALSE_LITERAL;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr2:', childrenResults);
@@ -250,7 +262,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const rightChildValue = this.visitChildren(ctx);
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
-            return !leftBool || rightBool ? '#t' : '#f';
+            return !leftBool || rightBool ? TRUE_LITERAL : FALSE_LITERAL;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr3:', childrenResults);
@@ -263,7 +275,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const rightChildValue = this.visitChildren(ctx);
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
-            return leftBool && rightBool ? '#t' : '#f';
+            return leftBool && rightBool ? TRUE_LITERAL : FALSE_LITERAL;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr4:', childrenResults);
@@ -323,7 +335,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         console.log('childrenResults in expr5:', childrenResults);
         if (ctx.NEG_TOK()) {
             const childValue = getBooleanValue(childrenResults);
-            return childValue ? '#f' : '#t';
+            return childValue ? FALSE_LITERAL : TRUE_LITERAL;
         }
         if (ctx.ALWAYS_TOK()) {
             results.push(['**UNIMPLEMENTED** Temporal Operator (`always`)']);
@@ -380,8 +392,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         }
         if (ctx.compareOp()) {
             foundValue = true;
+            if (ctx.expr6() === undefined || ctx.expr7() === undefined) {
+                throw new Error('Expected the compareOp to have 2 operands!');
+            }
             const leftChildValue = this.visit(ctx.expr6());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr7());
             console.log('left child value:', leftChildValue);
             console.log('right child value:', rightChildValue);
             switch (ctx.compareOp()?.text) {
@@ -390,58 +405,57 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     // TODO: this equality implementation DOES NOT MATCH FORGE RIGHT NOW!!
                     // THIS IS JUST A TEMPORARY JANKY THING TO TEST OUT SOME VIZ STUFF THAT RELIED ON EQUALITY
                     if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
-                        results = leftChildValue === rightChildValue ? '#t' : '#f';
+                        results = leftChildValue === rightChildValue ? TRUE_LITERAL : FALSE_LITERAL;
                     }
                     else {
                         results =
                             JSON.stringify(leftChildValue) === JSON.stringify(rightChildValue)
-                                ? '#t'
-                                : '#f';
+                                ? TRUE_LITERAL
+                                : FALSE_LITERAL;
                     }
                     break;
                 case '<':
                     results =
                         getNumberValue(leftChildValue) < getNumberValue(rightChildValue)
-                            ? '#t'
-                            : '#f';
+                            ? TRUE_LITERAL
+                            : FALSE_LITERAL;
                     break;
                 case '>':
                     results =
                         getNumberValue(leftChildValue) > getNumberValue(rightChildValue)
-                            ? '#t'
-                            : '#f';
+                            ? TRUE_LITERAL
+                            : FALSE_LITERAL;
                     console.log('setting the result here:', results);
                     break;
                 case '<=':
                     results =
                         getNumberValue(leftChildValue) <= getNumberValue(rightChildValue)
-                            ? '#t'
-                            : '#f';
+                            ? TRUE_LITERAL
+                            : FALSE_LITERAL;
                     break;
                 case '>=':
                     results =
                         getNumberValue(leftChildValue) >= getNumberValue(rightChildValue)
-                            ? '#t'
-                            : '#f';
+                            ? TRUE_LITERAL
+                            : FALSE_LITERAL;
                     break;
                 case 'in':
                     // this should be true if the left value is equal to the right value,
                     // or a subset of it
-                    if (leftChildValue === rightChildValue) {
-                        results = '#t';
-                    }
-                    else if (isTupleArray(rightChildValue)) {
-                        if (isSingleValue(leftChildValue)) {
-                            results = rightChildValue.some((tuple) => tuple.length === 1 && tuple[0] === leftChildValue) ? '#t' : '#f';
+                    if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
+                        if (areTupleArraysEqual(leftChildValue, rightChildValue)) {
+                            results = TRUE_LITERAL;
                         }
                         else {
-                            results = leftChildValue.every((tuple) => rightChildValue.includes(tuple))
-                                ? '#t'
-                                : '#f';
+                            // check if left is subset of right
+                            results = isTupleArraySubset(leftChildValue, rightChildValue) ? TRUE_LITERAL : FALSE_LITERAL;
                         }
                     }
-                    else {
-                        results = '#f';
+                    else if (isTupleArray(rightChildValue)) {
+                        results = rightChildValue.some((tuple) => tuple.length === 1 && tuple[0] === leftChildValue) ? TRUE_LITERAL : FALSE_LITERAL;
+                    }
+                    else { // left is a tuple array but right is a single value, so false
+                        results = FALSE_LITERAL;
                     }
                     break;
                 case 'is':
@@ -461,7 +475,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             }
         }
         if (toNegate) {
-            return getBooleanValue(results) ? '#f' : '#t';
+            return getBooleanValue(results) ? FALSE_LITERAL : TRUE_LITERAL;
         }
         if (foundValue) {
             console.log('found value; returning:', results);
@@ -479,30 +493,30 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         }
         if (ctx.ONE_TOK()) {
             if (isTupleArray(childrenResults) && childrenResults.length === 1) {
-                return "#t";
+                return TRUE_LITERAL;
             }
-            return "#f";
+            return FALSE_LITERAL;
         }
         if (ctx.TWO_TOK()) {
             throw new Error('**NOT IMPLEMENTING FOR NOW** Two (`two`)');
         }
         if (ctx.NO_TOK()) {
             if (isTupleArray(childrenResults) && childrenResults.length === 0) {
-                return "#t";
+                return TRUE_LITERAL;
             }
-            return "#f";
+            return FALSE_LITERAL;
         }
         if (ctx.SOME_TOK()) {
             if (isTupleArray(childrenResults) && childrenResults.length > 0) {
-                return "#t";
+                return TRUE_LITERAL;
             }
-            return "#f";
+            return FALSE_LITERAL;
         }
         if (ctx.LONE_TOK()) {
             if (isTupleArray(childrenResults) && childrenResults.length <= 1) {
-                return "#t";
+                return TRUE_LITERAL;
             }
-            return "#f";
+            return FALSE_LITERAL;
         }
         return childrenResults;
     }
@@ -588,7 +602,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     return leftChildValue;
                 }
                 if (leftChildValue[0].length === rightChildValue[0].length) {
-                    return leftChildValue.filter((tuple) => !rightChildValue.some((rightTuple) => arraysEqual(tuple, rightTuple)));
+                    return leftChildValue.filter((tuple) => !rightChildValue.some((rightTuple) => areTuplesEqual(tuple, rightTuple)));
                 }
             }
             else {
@@ -648,7 +662,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     return [];
                 }
                 if (leftChildValue[0].length === rightChildValue[0].length) {
-                    return leftChildValue.filter((tuple) => rightChildValue.some((rightTuple) => arraysEqual(tuple, rightTuple)));
+                    return leftChildValue.filter((tuple) => rightChildValue.some((rightTuple) => areTuplesEqual(tuple, rightTuple)));
                 }
             }
             else {
@@ -1021,10 +1035,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         // if `true` or `false`, return the corresponding value
         const identifier = ctx.IDENTIFIER_TOK().text;
         if (identifier === 'true') {
-            return '#t';
+            return TRUE_LITERAL;
         }
         if (identifier === 'false') {
-            return '#f';
+            return FALSE_LITERAL;
         }
         console.log('need to find an identifier:', identifier);
         // console.log(this.instanceData);

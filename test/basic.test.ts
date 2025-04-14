@@ -2,6 +2,7 @@ import { skip } from "node:test";
 import { ForgeExprEvaluatorUtil } from "../src";
 import { DatumParsed } from "../src/types";
 import tttDatum from "./examples/ttt-basic/datum.json";
+import interSigDatum from "./examples/inter-sig/datum.json";
 
 // helper function to get module source code from datum
 function getCodeFromDatum(datum: DatumParsed): string {
@@ -138,4 +139,31 @@ describe("forge-expr-evaluator", () => {
   });
 
 
+  it("can evaluate basic inter and intra-sig relations", () => {
+    const datum: DatumParsed = interSigDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "A in A";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual("#t");
+
+    const expr2 = "A0 in A";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+    expect(result2).toEqual("#t");
+  });
+
+  it("can evaluate a reference to a sig", () => {
+    const datum: DatumParsed = interSigDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "A0";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual([["A0"]]);
+  });
 });
