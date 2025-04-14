@@ -1,6 +1,6 @@
 import { AbstractParseTreeVisitor } from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import { ForgeVisitor } from './forge-antlr/ForgeVisitor';
-import { ExprContext, Expr1Context, Expr1_5Context, Expr2Context, Expr3Context, Expr4Context, Expr4_5Context, Expr5Context, Expr6Context, Expr7Context, Expr8Context, Expr9Context, Expr10Context, Expr11Context, Expr12Context, Expr13Context, Expr14Context, Expr15Context, Expr16Context, Expr17Context, Expr18Context, ExprListContext, NameContext, PredDeclContext, BlockContext } from './forge-antlr/ForgeParser';
+import { ExprContext, Expr1Context, Expr1_5Context, Expr2Context, Expr3Context, Expr4Context, Expr4_5Context, Expr5Context, Expr6Context, Expr7Context, Expr8Context, Expr9Context, Expr10Context, Expr11Context, Expr12Context, Expr13Context, Expr14Context, Expr15Context, Expr16Context, Expr17Context, Expr18Context, ExprListContext, NameContext, PredDeclContext, BlockContext, QualNameContext, QuantDeclListContext, NameListContext, QuantDeclContext } from './forge-antlr/ForgeParser';
 import { DatumParsed } from './types';
 import { Predicate } from './types';
 type SingleValue = string;
@@ -16,6 +16,7 @@ export declare class ForgeExprEvaluator extends AbstractParseTreeVisitor<EvalRes
     private instanceData;
     private predicates;
     private environmentStack;
+    private quantDeclEnvironmentStack;
     constructor(datum: DatumParsed, instanceIndex: number, predicates: Predicate[]);
     private isPredicateName;
     private getPredicate;
@@ -44,8 +45,12 @@ export declare class ForgeExprEvaluator extends AbstractParseTreeVisitor<EvalRes
     visitExpr15(ctx: Expr15Context): EvalResult;
     visitExpr16(ctx: Expr16Context): EvalResult;
     visitExpr17(ctx: Expr17Context): EvalResult;
+    getNameListValues(ctx: NameListContext): string[];
+    getQuantDeclValues(ctx: QuantDeclContext): Record<string, Tuple[]>;
+    getQuantDeclListValues(ctx: QuantDeclListContext): Record<string, Tuple[]>;
     visitExpr18(ctx: Expr18Context): EvalResult;
     visitExprList(ctx: ExprListContext): EvalResult;
     visitName(ctx: NameContext): EvalResult;
+    visitQualName(ctx: QualNameContext): EvalResult;
 }
 export {};

@@ -1,0 +1,168 @@
+{
+  "buttons": [
+    {
+      "mouseover": "(Get next instance)",
+      "onClick": "next",
+      "text": "Next"
+    }
+  ],
+  "data": "<alloy builddate=\"Sunday, April 13th, 2025\">\n<instance bitwidth=\"4\" maxseq=\"-1\" command=\"temporary-name_dummy_1\" filename=\"/Users/karankashyap/Desktop/dummy.frg\" version=\"4.1\"  >\n\n<sig label=\"seq/Int\" ID=\"0\" parentID=\"1\" builtin=\"yes\">\n</sig>\n\n<sig label=\"Int\" ID=\"1\" parentID=\"2\" builtin=\"yes\">\n\n</sig>\n\n<sig label=\"univ\" ID=\"2\" builtin=\"yes\">\n</sig>\n\n<field label=\"no-field-guard\" ID=\"3\" parentID=\"2\">\n<types> <type ID=\"2\"/><type ID=\"2\"/> </types>\n</field>\n\n<sig label=\"A\" ID=\"4\" parentID=\"2\">\n<atom label=\"A0\"/>\n</sig>\n\n<sig label=\"B\" ID=\"5\" parentID=\"2\">\n<atom label=\"B0\"/>\n</sig>\n\n\n</instance>\n\n<source filename=\"/Users/karankashyap/Desktop/dummy.frg\" content=\"#lang forge\r&#xA;\r&#xA;one sig A {}\r&#xA;one sig B {}\r&#xA;run {}\r&#xA;\"></source>\n</alloy>",
+  "evaluator": true,
+  "format": "alloy",
+  "generatorName": "temporary-name_dummy_1",
+  "id": "1",
+  "parsed": {
+    "instances": [
+      {
+        "types": {
+          "seq/Int": {
+            "_": "type",
+            "id": "seq/Int",
+            "types": ["seq/Int", "Int"],
+            "atoms": [],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "Int": {
+            "_": "type",
+            "id": "Int",
+            "types": ["Int"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "-8",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-7",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-6",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-5",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-4",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-3",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-2",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-1",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "0",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "1",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "2",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "3",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "4",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "5",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "6",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "7",
+                "type": "Int"
+              }
+            ],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "univ": {
+            "_": "type",
+            "id": "univ",
+            "types": [],
+            "atoms": [],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "A": {
+            "_": "type",
+            "id": "A",
+            "types": ["A"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "A0",
+                "type": "A"
+              }
+            ]
+          },
+          "B": {
+            "_": "type",
+            "id": "B",
+            "types": ["B"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "B0",
+                "type": "B"
+              }
+            ]
+          }
+        },
+        "relations": {
+          "univ<:no-field-guard": {
+            "_": "relation",
+            "id": "univ<:no-field-guard",
+            "name": "no-field-guard",
+            "types": ["univ", "univ"],
+            "tuples": []
+          }
+        },
+        "skolems": {}
+      }
+    ],
+    "bitwidth": 4,
+    "command": "temporary-name_dummy_1",
+    "maxSeq": -1,
+    "visualizerConfig": {}
+  }
+}
