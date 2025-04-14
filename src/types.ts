@@ -18,7 +18,7 @@ export interface DatumParsed {
   [key: string]: any;
 }
 
-interface ParsedValue {
+export interface ParsedValue {
   instances: InstanceData[];
   bitwidth: number;
   
@@ -41,7 +41,7 @@ export interface InstanceData {
   skolems: any;
 }
 
-interface BuiltinType {
+export interface BuiltinType {
   "_": string;
   id: string;
   types: string[];
@@ -51,7 +51,7 @@ interface BuiltinType {
   }
 }
 
-interface Sig {
+export interface Sig {
   "_": string;
   id: string;
   types: string[];
@@ -64,7 +64,7 @@ export interface Atom {
   type: string;
 }
 
-interface Relation {
+export interface Relation {
   "_": string;
   id: string;
   name: string;
