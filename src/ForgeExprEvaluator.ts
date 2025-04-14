@@ -773,17 +773,29 @@ export class ForgeExprEvaluator
 
   visitExpr12(ctx: Expr12Context): EvalResult {
     console.log('visiting expr12:', ctx.text);
-    let results: EvalResult = [];
 
     if (ctx.arrowOp()) {
       const leftChildValue = this.visit(ctx.expr12()!);
       const rightChildValue = this.visitChildren(ctx);
-      results.push(['**UNIMPLEMENTED** Arrow Operator (->)']);
 
-      // TODO: we need to implement -> using leftChildValue and rightChildValue
-      //       and then return the result
-      //       just returning results here for now
-      return results;
+      // Ensure both values are tuple arrays
+      const leftTuples = isSingleValue(leftChildValue) ? [[leftChildValue]] : leftChildValue;
+      const rightTuples = isSingleValue(rightChildValue) ? [[rightChildValue]] : rightChildValue;
+
+      if (!isTupleArray(leftTuples) || !isTupleArray(rightTuples)) {
+        throw new Error('Arrow operator operands must be tuple arrays or single values');
+      }
+
+      // Compute the Cartesian product
+      const result: Tuple[] = [];
+      for (const leftTuple of leftTuples) {
+        for (const rightTuple of rightTuples) {
+          result.push([...leftTuple, ...rightTuple]);
+        }
+      }
+
+      // Deduplicate the result
+      return deduplicateTuples(result);
     }
 
     return this.visitChildren(ctx);
