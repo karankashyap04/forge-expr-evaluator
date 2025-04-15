@@ -219,8 +219,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitExpr1(ctx) {
         console.log('visiting expr1:', ctx.text);
         if (ctx.OR_TOK()) {
+            if (ctx.expr1_5() === undefined || ctx.expr1_5() === undefined) {
+                throw new Error('Expected the OR operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr1());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr1_5());
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
             return leftBool || rightBool ? TRUE_LITERAL : FALSE_LITERAL;
@@ -232,8 +235,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitExpr1_5(ctx) {
         console.log('visiting expr1_5:', ctx.text);
         if (ctx.XOR_TOK()) {
+            if (ctx.expr1_5() === undefined || ctx.expr2() === undefined) {
+                throw new Error('Expected the XOR operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr1_5());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr2());
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
             return leftBool !== rightBool ? TRUE_LITERAL : FALSE_LITERAL;
@@ -245,8 +251,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitExpr2(ctx) {
         console.log('visiting expr2:', ctx.text);
         if (ctx.IFF_TOK()) {
+            if (ctx.expr2() === undefined || ctx.expr3() === undefined) {
+                throw new Error('Expected the IFF operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr2());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr3());
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
             return leftBool === rightBool ? TRUE_LITERAL : FALSE_LITERAL;
@@ -258,8 +267,12 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitExpr3(ctx) {
         console.log('visiting expr3:', ctx.text);
         if (ctx.IMP_TOK()) {
+            if (ctx.expr3() === undefined || ctx.expr4() === undefined) {
+                throw new Error('Expected the IMP operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr4());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr3()[0]);
+            // TODO: add support for ELSE_TOK over here
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
             return !leftBool || rightBool ? TRUE_LITERAL : FALSE_LITERAL;
@@ -271,8 +284,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitExpr4(ctx) {
         console.log('visiting expr4:', ctx.text);
         if (ctx.AND_TOK()) {
+            if (ctx.expr4() === undefined || ctx.expr4_5() === undefined) {
+                throw new Error('Expected the AND operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr4());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr4_5());
             const leftBool = getBooleanValue(leftChildValue);
             const rightBool = getBooleanValue(rightChildValue);
             return leftBool && rightBool ? TRUE_LITERAL : FALSE_LITERAL;
@@ -288,7 +304,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             results.push(['**UNIMPLEMENTED** Temporal Operator (`until`)']);
             // results = results.concat(this.visit(ctx.expr5()[0]));
             // TODO: get left child value (as per the line commented out line above)
-            //       then get right child value by calling visitChildren
+            //       then get right child value by calling ctx.expr5()[1]
             //       then apply the UNTIL implementation
             // TODO: returning for now without going to children since this is just
             // unimplemented
@@ -298,7 +314,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             results.push(['**UNIMPLEMENTED** Temporal Operator (`release`)']);
             // results = results.concat(this.visit(ctx.expr5()[0]));
             // TODO: get left child value (as per the line commented out line above)
-            //       then get right child value by calling visitChildren
+            //       then get right child value by calling ctx.expr5()[1]
             //       then apply the RELEASE implementation
             // TODO: returning for now without going to children since this is just
             // unimplemented
@@ -308,7 +324,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             results.push(['**UNIMPLEMENTED** Temporal Operator (`since`)']);
             // results = results.concat(this.visit(ctx.expr5()[0]));
             // TODO: get left child value (as per the line commented out line above)
-            //       then get right child value by calling visitChildren
+            //       then get right child value by calling ctx.expr5()[1]
             //       then apply the SINCE implementation
             // TODO: returning for now without going to children since this is just
             // unimplemented
@@ -318,7 +334,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             results.push(['**UNIMPLEMENTED** Temporal Operator (`triggered`)']);
             // results = results.concat(this.visit(ctx.expr5()[0]));
             // TODO: get left child value (as per the line commented out line above)
-            //       then get right child value by calling visitChildren
+            //       then get right child value by calling ctx.expr5()[1]
             //       then apply the TRIGGERED implementation
             // TODO: returning for now without going to children since this is just
             // unimplemented
@@ -331,7 +347,13 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitExpr5(ctx) {
         console.log('visiting expr5:', ctx.text);
         let results = [];
-        const childrenResults = this.visitChildren(ctx);
+        if (ctx.expr6()) {
+            return this.visit(ctx.expr6());
+        }
+        if (ctx.expr5() === undefined) {
+            throw new Error('Expected the temporal operator to have 1 operand!');
+        }
+        const childrenResults = this.visit(ctx.expr5());
         console.log('childrenResults in expr5:', childrenResults);
         if (ctx.NEG_TOK()) {
             const childValue = getBooleanValue(childrenResults);
@@ -486,7 +508,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitExpr7(ctx) {
         console.log('visiting expr7:', ctx.text);
         let results = [];
-        const childrenResults = this.visitChildren(ctx);
+        const childrenResults = this.visit(ctx.expr8());
         console.log('childrenResults:', childrenResults);
         if (ctx.SET_TOK()) {
             throw new Error('**NOT IMPLEMENTING FOR NOW** Set (`set`)');
@@ -624,8 +646,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         console.log('visiting expr10:', ctx.text);
         let results = [];
         if (ctx.PPLUS_TOK()) {
+            if (ctx.expr10() === undefined || ctx.expr11() === undefined) {
+                throw new Error('Expected the pplus operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr10());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr11());
             throw new Error('**NOT IMPLEMENTING FOR NOW** pplus (`++`)');
         }
         return this.visitChildren(ctx);
@@ -633,8 +658,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitExpr11(ctx) {
         console.log('visiting expr11:', ctx.text);
         if (ctx.AMP_TOK()) {
+            if (ctx.expr11() === undefined || ctx.expr12() === undefined) {
+                throw new Error('Expected the amp operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr11());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr12());
             // should only work if arities are the same
             if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
                 return leftChildValue === rightChildValue ? leftChildValue : [];
@@ -701,13 +729,19 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         console.log('visiting expr13:', ctx.text);
         let results = [];
         if (ctx.SUPT_TOK()) {
+            if (ctx.expr13() === undefined || ctx.expr14() === undefined) {
+                throw new Error('Expected the supertype operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr13());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr14());
             throw new Error('**NOT IMPLEMENTING FOR NOW** Supertype Operator (`:>`)');
         }
         if (ctx.SUBT_TOK()) {
+            if (ctx.expr13() === undefined || ctx.expr14() === undefined) {
+                throw new Error('Expected the subtype operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr13());
-            const rightChildValue = this.visitChildren(ctx);
+            const rightChildValue = this.visit(ctx.expr14());
             throw new Error('**NOT IMPLEMENTING FOR NOW** Subtype Operator (`<:`)');
         }
         return this.visitChildren(ctx);
@@ -800,8 +834,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         console.log('visiting expr15:', ctx.text);
         let results = [];
         if (ctx.DOT_TOK()) {
+            if (ctx.expr15() === undefined || ctx.expr16() === undefined) {
+                throw new Error('Expected the dot operator to have 2 operands of the right type!');
+            }
             const beforeDotExpr = this.visit(ctx.expr15());
-            const afterDotExpr = this.visitChildren(ctx);
+            const afterDotExpr = this.visit(ctx.expr16());
             console.log('beforeExpr:', beforeDotExpr);
             console.log('afterExpr:', afterDotExpr);
             if (isTupleArray(beforeDotExpr) &&
@@ -839,10 +876,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         let results = [];
         if (ctx.PRIME_TOK()) {
             const leftChildValue = this.visit(ctx.expr16());
-            const rightChildValue = this.visitChildren(ctx);
             results.push(["**UNIMPLEMENTED** Primed Expression _'"]);
-            // TODO: we need to implement PRIME (') using leftChildValue and rightChildValue
-            //       and then return the result
+            // TODO: we need to implement PRIME (') using leftChildValue and then return the result
             //       just returning results here for now
             return results;
         }
@@ -935,7 +970,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return `${ctx.const()?.text}`;
         }
         if (ctx.qualName()) {
-            return this.visitChildren(ctx);
+            return this.visitQualName(ctx.qualName());
         }
         if (ctx.AT_TOK()) {
             throw new Error('`@` operator is Alloy specific; it is not supported by Forge!');
@@ -1012,7 +1047,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         let results = [];
         if (ctx.COMMA_TOK()) {
             const headValue = this.visit(ctx.expr());
-            const tailValues = this.visitChildren(ctx);
+            if (ctx.exprList() === undefined) {
+                throw new Error('exprList with a comma must have a tail!');
+            }
+            const tailValues = this.visit(ctx.exprList());
             console.log('headValue:', headValue);
             console.log('tailValues:', tailValues);
             // this isn't necessarily correct; just trying to get something that would
