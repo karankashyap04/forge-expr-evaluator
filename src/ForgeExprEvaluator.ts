@@ -795,8 +795,11 @@ export class ForgeExprEvaluator
     console.log('visiting expr12:', ctx.text);
 
     if (ctx.arrowOp()) {
+      if (ctx.expr12() === undefined || ctx.expr13() === undefined) {
+        throw new Error('Expected the arrow operator to have 2 operands of the right type!');
+      }
       const leftChildValue = this.visit(ctx.expr12()!);
-      const rightChildValue = this.visitChildren(ctx);
+      const rightChildValue = this.visit(ctx.expr13()!);
 
       // Ensure both values are tuple arrays
       const leftTuples = isSingleValue(leftChildValue) ? [[leftChildValue]] : leftChildValue;
