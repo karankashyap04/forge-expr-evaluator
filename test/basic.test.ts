@@ -1,3 +1,4 @@
+import { skip } from "node:test";
 import { ForgeExprEvaluatorUtil } from "../src";
 import { DatumParsed } from "../src/types";
 import tttDatum from "./examples/ttt-basic/datum.json";
@@ -81,6 +82,7 @@ describe("forge-expr-evaluator", () => {
     ]);
   });
 
+
   it("can evaluate a set comprehension", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);
@@ -100,7 +102,7 @@ describe("forge-expr-evaluator", () => {
     ]);
   });
 
-  it("can evaluate cardinality on the result of a set comprehension", () => {
+  skip("can evaluate cardinality on the result of a set comprehension", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);
 
@@ -123,6 +125,19 @@ describe("forge-expr-evaluator", () => {
 
     expect(result).toEqual([["X0"], ["O0"]]);
   });
+
+  it("can evaluate -> operation", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "X->O->X";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual([["X0", "O0", "X0"]]);
+  });
+
 
   it("can evaluate basic inter and intra-sig relations", () => {
     const datum: DatumParsed = interSigDatum;

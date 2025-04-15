@@ -673,15 +673,27 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     }
     visitExpr12(ctx) {
         console.log('visiting expr12:', ctx.text);
-        let results = [];
         if (ctx.arrowOp()) {
+            if (ctx.expr12() === undefined || ctx.expr13() === undefined) {
+                throw new Error('Expected the arrow operator to have 2 operands of the right type!');
+            }
             const leftChildValue = this.visit(ctx.expr12());
-            const rightChildValue = this.visitChildren(ctx);
-            results.push(['**UNIMPLEMENTED** Arrow Operator (->)']);
-            // TODO: we need to implement -> using leftChildValue and rightChildValue
-            //       and then return the result
-            //       just returning results here for now
-            return results;
+            const rightChildValue = this.visit(ctx.expr13());
+            // Ensure both values are tuple arrays
+            const leftTuples = isSingleValue(leftChildValue) ? [[leftChildValue]] : leftChildValue;
+            const rightTuples = isSingleValue(rightChildValue) ? [[rightChildValue]] : rightChildValue;
+            if (!isTupleArray(leftTuples) || !isTupleArray(rightTuples)) {
+                throw new Error('Arrow operator operands must be tuple arrays or single values');
+            }
+            // Compute the Cartesian product
+            const result = [];
+            for (const leftTuple of leftTuples) {
+                for (const rightTuple of rightTuples) {
+                    result.push([...leftTuple, ...rightTuple]);
+                }
+            }
+            // Deduplicate the result
+            return deduplicateTuples(result);
         }
         return this.visitChildren(ctx);
     }
