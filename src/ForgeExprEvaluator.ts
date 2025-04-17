@@ -278,6 +278,8 @@ export class ForgeExprEvaluator
       }
       const varQuantifiedSets = this.getQuantDeclListValues(ctx.quantDeclList()!);
 
+      const isDisjoint = ctx.DISJ_TOK() !== undefined;
+
       // NOTE: this doesn't support the situation in which blockOrBar is a block
       // yet
       const blockOrBar = ctx.blockOrBar();
@@ -303,6 +305,21 @@ export class ForgeExprEvaluator
 
       for (let i = 0; i < product.length; i++) {
         const tuple = product[i];
+        if (isDisjoint) {
+          // the elements of the tuple must be different
+          let tupleDisjoint = true;
+          const seen = new Set();
+          for (const val of tuple) {
+            if (seen.has(val)) {
+              tupleDisjoint = false;
+              break;
+            }
+            seen.add(val);
+          }
+          if (!tupleDisjoint) {
+            continue;
+          }
+        }
         const quantDeclEnv: Environment = {};
         for (let j = 0; j < varNames.length; j++) {
           const varName = varNames[j];

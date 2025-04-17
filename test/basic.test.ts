@@ -188,4 +188,20 @@ describe("forge-expr-evaluator", () => {
 
     expect(result).toEqual("#t");
   });
+
+  it("can perform truthy quantifications when specifying disjoint", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "all disj i, j : Int | { not i = j }";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual("#t");
+
+    const expr2 = "some disj i, j : Int | { i = j }";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+    expect(result2).toEqual("#f");
+  });
 });
