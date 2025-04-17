@@ -166,4 +166,16 @@ describe("forge-expr-evaluator", () => {
 
     expect(result).toEqual([["A0"]]);
   });
+
+  it("can quantify in a truthy way", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "some i : Int | i < 4";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual("#t");
+  })
 });

@@ -192,10 +192,77 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             throw new Error('**NOT IMPLEMENTING FOR NOW** Bind Expression');
         }
         if (ctx.quant()) {
-            results = [];
-            results.push([
-                '**UNIMPLEMENTED** Quantified Expression (`all`, `some`, `no`, etc.)'
-            ]);
+            // results = [];
+            // results.push([
+            //   '**UNIMPLEMENTED** Quantified Expression (`all`, `some`, `no`, etc.)'
+            // ]);
+            // TODO: add support for disj here
+            if (ctx.quantDeclList() === undefined) {
+                throw new Error('Expected the quantifier to have a quantDeclList!');
+            }
+            const varQuantifiedSets = this.getQuantDeclListValues(ctx.quantDeclList());
+            // NOTE: this doesn't support the situation in which blockOrBar is a block
+            // yet
+            const blockOrBar = ctx.blockOrBar();
+            if (blockOrBar === undefined) {
+                throw new Error('expected to quantify over something!');
+            }
+            if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
+                throw new Error('Expected the quantifier to have a bar followed by an expr!');
+            }
+            const barExpr = blockOrBar.expr();
+            const varNames = [];
+            const quantifiedSets = [];
+            for (const varName in varQuantifiedSets) {
+                varNames.push(varName);
+                quantifiedSets.push(varQuantifiedSets[varName]);
+            }
+            const product = getCombinations(quantifiedSets);
+            const result = [];
+            let foundTrue = false;
+            let foundFalse = false;
+            for (let i = 0; i < product.length; i++) {
+                const tuple = product[i];
+                const quantDeclEnv = {};
+                for (let j = 0; j < varNames.length; j++) {
+                    const varName = varNames[j];
+                    const varValue = tuple[j];
+                    quantDeclEnv[varName] = varValue;
+                }
+                this.quantDeclEnvironmentStack.push(quantDeclEnv);
+                // now, we want to evaluate the barExpr
+                const barExprValue = this.visit(barExpr);
+                if (getBooleanValue(barExprValue)) { // will error if not boolean val, which we want
+                    result.push(tuple);
+                    foundTrue = true;
+                }
+                else {
+                    foundFalse = true;
+                }
+                this.quantDeclEnvironmentStack.pop();
+            }
+            if (ctx.quant().ALL_TOK()) {
+                return !foundFalse ? TRUE_LITERAL : FALSE_LITERAL;
+            }
+            else if (ctx.quant().NO_TOK()) {
+                return !foundTrue ? TRUE_LITERAL : FALSE_LITERAL;
+            }
+            else if (ctx.quant().mult()) {
+                const multExpr = ctx.quant().mult();
+                if (multExpr.LONE_TOK()) {
+                    return result.length <= 1 ? TRUE_LITERAL : FALSE_LITERAL;
+                }
+                else if (multExpr.SOME_TOK()) {
+                    return foundTrue ? TRUE_LITERAL : FALSE_LITERAL;
+                }
+                else if (multExpr.ONE_TOK()) {
+                    result.length === 1 ? TRUE_LITERAL : FALSE_LITERAL;
+                }
+                else if (multExpr.TWO_TOK()) {
+                    throw new Error('**NOT IMPLEMENTING FOR NOW** Two (`two`)');
+                }
+            }
+            // TODO: don't have support for SUM_TOK yet
         }
         // TODO: fix this!
         const childrenResults = this.visitChildren(ctx);
