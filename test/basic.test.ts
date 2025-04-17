@@ -82,7 +82,6 @@ describe("forge-expr-evaluator", () => {
     ]);
   });
 
-
   it("can evaluate a set comprehension", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);
@@ -102,7 +101,7 @@ describe("forge-expr-evaluator", () => {
     ]);
   });
 
-  skip("can evaluate cardinality on the result of a set comprehension", () => {
+  it("can evaluate cardinality on the result of a set comprehension", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);
 
@@ -137,7 +136,6 @@ describe("forge-expr-evaluator", () => {
 
     expect(result).toEqual([["X0", "O0", "X0"]]);
   });
-
 
   it("can evaluate basic inter and intra-sig relations", () => {
     const datum: DatumParsed = interSigDatum;
@@ -177,5 +175,17 @@ describe("forge-expr-evaluator", () => {
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
     expect(result).toEqual("#t");
-  })
+  });
+
+  it("can quantify in a truthy way if there is a block after the bar", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "some i : Int | { i < 4 \n i > 2}";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual("#t");
+  });
 });
