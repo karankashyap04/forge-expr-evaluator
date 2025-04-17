@@ -62,6 +62,10 @@ function getCombinations(arrays) {
     }
     return cartesianProduct(valueSets);
 }
+///// Forge builtin functions we support /////
+// this is a list of forge builtin functions we currently support; add to this
+// list as we support more
+const SUPPORTED_BUILTINS = ['add', 'subtract'];
 /**
  * A recursive evaluator for Forge expressions.
  * This visitor walks the parse tree and prints the type of operation encountered.
@@ -74,7 +78,6 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         this.instanceData = this.datum.parsed.instances[this.instanceIndex];
         this.predicates = predicates;
         this.environmentStack = [];
-        this.quantDeclEnvironmentStack = [];
     }
     // helper function
     isPredicateName(name) {
@@ -99,14 +102,17 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         }
         // make bindings for the args
         const argNames = predicate.args?.map((arg) => arg.split(':')[0]); // remove type info
-        const bindings = {};
+        const bindings = {
+            env: {},
+            type: 'predArgs'
+        };
         if (argNames) {
             for (let i = 0; i < argNames.length; i++) {
                 let argValue = Array.isArray(evaluatedArgs) ? evaluatedArgs[i] : evaluatedArgs;
                 if (Array.isArray(argValue) && argValue.length === 1) {
                     argValue = argValue[0]; // if it's a single value in an array, just use the value
                 }
-                bindings[argNames[i]] =
+                bindings.env[argNames[i]] =
                     typeof argValue === 'string' ? argValue : [argValue];
             }
         }
@@ -239,13 +245,16 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                         continue;
                     }
                 }
-                const quantDeclEnv = {};
+                const quantDeclEnv = {
+                    env: {},
+                    type: 'quantDecl'
+                };
                 for (let j = 0; j < varNames.length; j++) {
                     const varName = varNames[j];
                     const varValue = tuple[j];
-                    quantDeclEnv[varName] = varValue;
+                    quantDeclEnv.env[varName] = varValue;
                 }
-                this.quantDeclEnvironmentStack.push(quantDeclEnv);
+                this.environmentStack.push(quantDeclEnv);
                 // now, we want to evaluate the barExpr
                 const barExprValue = this.visit(barExpr);
                 if (getBooleanValue(barExprValue)) { // will error if not boolean val, which we want
@@ -255,7 +264,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 else {
                     foundFalse = true;
                 }
-                this.quantDeclEnvironmentStack.pop();
+                this.environmentStack.pop();
             }
             if (ctx.quant().ALL_TOK()) {
                 return !foundFalse ? TRUE_LITERAL : FALSE_LITERAL;
@@ -1093,19 +1102,22 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const result = [];
             for (let i = 0; i < product.length; i++) {
                 const tuple = product[i];
-                const quantDeclEnv = {};
+                const quantDeclEnv = {
+                    env: {},
+                    type: 'quantDecl',
+                };
                 for (let j = 0; j < varNames.length; j++) {
                     const varName = varNames[j];
                     const varValue = tuple[j];
-                    quantDeclEnv[varName] = varValue;
+                    quantDeclEnv.env[varName] = varValue;
                 }
-                this.quantDeclEnvironmentStack.push(quantDeclEnv);
+                this.environmentStack.push(quantDeclEnv);
                 // now, we want to evaluate the barExpr
                 const barExprValue = this.visit(barExpr);
                 if (getBooleanValue(barExprValue)) { // will error if not boolean val, which we want
                     result.push(tuple);
                 }
-                this.quantDeclEnvironmentStack.pop();
+                this.environmentStack.pop();
             }
             return result;
         }
@@ -1177,22 +1189,38 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 return this.callPredicate(predicate, []);
             }
         }
-        // if this is a var that has a value due to a quantDecl, get the value for
-        // the current combination of the space being searched
-        for (let i = this.quantDeclEnvironmentStack.length - 1; i >= 0; i--) {
-            const quantDeclEnv = this.quantDeclEnvironmentStack[i];
-            if (quantDeclEnv[identifier] !== undefined) {
-                return quantDeclEnv[identifier];
+        // need to look through the environment. we need to go through the environment
+        // backwards from the latest frame, and we can keep going to the previous
+        // frame until we encounter a predArgs frame. If we encounter a predArg
+        // frame we can't go further back
+        for (let i = this.environmentStack.length - 1; i >= 0; i--) {
+            const currEnv = this.environmentStack[i];
+            if (currEnv.env[identifier] !== undefined) {
+                return currEnv.env[identifier];
+            }
+            if (currEnv.type === 'predArgs') {
+                break; // can't go further back
             }
         }
-        // if this is an arg to the pred being evaluated, return it
-        const latestEnvironment = this.environmentStack.length > 0
-            ? this.environmentStack[this.environmentStack.length - 1]
-            : undefined;
-        if (latestEnvironment !== undefined &&
-            latestEnvironment[identifier] !== undefined) {
-            return latestEnvironment[identifier];
-        }
+        // // if this is a var that has a value due to a quantDecl, get the value for
+        // // the current combination of the space being searched
+        // for (let i = this.quantDeclEnvironmentStack.length - 1; i >= 0; i--) {
+        //   const quantDeclEnv = this.quantDeclEnvironmentStack[i];
+        //   if (quantDeclEnv[identifier] !== undefined) {
+        //     return quantDeclEnv[identifier];
+        //   }
+        // }
+        // // if this is an arg to the pred being evaluated, return it
+        // const latestEnvironment =
+        //   this.environmentStack.length > 0
+        //     ? this.environmentStack[this.environmentStack.length - 1]
+        //     : undefined;
+        // if (
+        //   latestEnvironment !== undefined &&
+        //   latestEnvironment[identifier] !== undefined
+        // ) {
+        //   return latestEnvironment[identifier];
+        // }
         let result = undefined;
         // check if this is a type
         const typeNames = Object.keys(this.instanceData.types).map((key) => this.instanceData.types[key].id);
@@ -1252,7 +1280,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         if (result !== undefined) {
             return result;
         }
-        return identifier;
+        // return identifier;
+        if (this.isPredicateName(identifier) || SUPPORTED_BUILTINS.includes(identifier)) {
+            return identifier;
+        }
+        throw new Error(`bad name ${identifier} referenced!`);
     }
     visitQualName(ctx) {
         // NOTE: this currently only supports Int; doesn't support other branches

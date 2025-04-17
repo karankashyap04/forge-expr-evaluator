@@ -204,4 +204,18 @@ describe("forge-expr-evaluator", () => {
     const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
     expect(result2).toEqual("#f");
   });
+
+  it("can avoid variable shadowing issues across predicate args and quantified vars", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    // quantified x is shadowed by the x which is the argument to argPred1
+    // if shadowing doesn't work properly, this will return #f
+    const expr = "all x : Int | argPred1[3, 3]";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual("#t");
+  })
 });
