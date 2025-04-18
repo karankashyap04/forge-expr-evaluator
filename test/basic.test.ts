@@ -38,7 +38,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0; // could choose a different index if we wanted to
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toBe("2");
+    expect(result).toBe(2);
   });
 
   it("can evaluate an instance-specific expression", () => {
@@ -63,22 +63,22 @@ describe("forge-expr-evaluator", () => {
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
     expect(result).toEqual([
-      ["-8"],
-      ["-7"],
-      ["-6"],
-      ["-5"],
-      ["-4"],
-      ["-3"],
-      ["-2"],
-      ["-1"],
-      ["0"],
-      ["1"],
-      ["2"],
-      ["3"],
-      ["4"],
-      ["5"],
-      ["6"],
-      ["7"],
+      [-8],
+      [-7],
+      [-6],
+      [-5],
+      [-4],
+      [-3],
+      [-2],
+      [-1],
+      [0],
+      [1],
+      [2],
+      [3],
+      [4],
+      [5],
+      [6],
+      [7],
     ]);
   });
 
@@ -92,12 +92,12 @@ describe("forge-expr-evaluator", () => {
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
     expect(result).toEqual([
-      ["0", "0"],
-      ["0", "1"],
-      ["0", "2"],
-      ["1", "0"],
-      ["1", "1"],
-      ["2", "0"],
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [1, 0],
+      [1, 1],
+      [2, 0],
     ]);
   });
 
@@ -110,7 +110,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toBe("6");
+    expect(result).toBe(6);
   });
 
   it("can evaluate a set comprehension over a set that isn't just `Int`", () => {
@@ -146,11 +146,11 @@ describe("forge-expr-evaluator", () => {
 
     const expr1 = "A in A";
     const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
-    expect(result1).toEqual("#t");
+    expect(result1).toEqual(true);
 
     const expr2 = "A0 in A";
     const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
-    expect(result2).toEqual("#t");
+    expect(result2).toEqual(true);
   });
 
   it("can evaluate a reference to a sig", () => {
@@ -174,7 +174,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual("#t");
+    expect(result).toEqual(true);
   });
 
   it("can quantify in a truthy way if there is a block after the bar", () => {
@@ -186,7 +186,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual("#t");
+    expect(result).toEqual(true);
   });
 
   it("can perform truthy quantifications when specifying disjoint", () => {
@@ -198,11 +198,11 @@ describe("forge-expr-evaluator", () => {
 
     const expr1 = "all disj i, j : Int | { not i = j }";
     const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
-    expect(result1).toEqual("#t");
+    expect(result1).toEqual(true);
 
     const expr2 = "some disj i, j : Int | { i = j }";
     const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
-    expect(result2).toEqual("#f");
+    expect(result2).toEqual(false);
   });
 
   it("can avoid variable shadowing issues across predicate args and quantified vars", () => {
@@ -216,7 +216,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual("#t");
+    expect(result).toEqual(true);
   });
 
   it("can evaluate chained dot joins", () => {
@@ -229,5 +229,17 @@ describe("forge-expr-evaluator", () => {
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
     expect(result).toEqual([["Board0"]]);
+  });
+
+  it("can evaluate a number", () => {
+    const datum: DatumParsed = interSigDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "1";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual(1);
   });
 });

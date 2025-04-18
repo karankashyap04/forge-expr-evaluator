@@ -3,10 +3,16 @@ import { ForgeParser, ExprContext, PredDeclContext } from './forge-antlr/ForgePa
 import { ForgeLexer } from './forge-antlr/ForgeLexer';
 import { ForgeListenerImpl } from './forge-antlr/ForgeListenerImpl';
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker';
-import { ForgeExprEvaluator } from './ForgeExprEvaluator';
+import { EvalResult, ForgeExprEvaluator } from './ForgeExprEvaluator';
 import { DatumParsed } from './types';
 import { Predicate } from './types';
 import { extractPredicates } from './predicateExtactor';
+
+type ErrorResult = {
+  error: Error;
+  stackTrace?: string;
+}
+type EvaluationResult = EvalResult | ErrorResult;
 
 export class ForgeExprEvaluatorUtil {
 
@@ -56,7 +62,7 @@ export class ForgeExprEvaluatorUtil {
     this.gotPredicateParseTrees = true;
   }
 
-  evaluateExpression(forgeExpr: string, instanceIndex: number = 0) {
+  evaluateExpression(forgeExpr: string, instanceIndex: number = 0): EvaluationResult {
     // get the parse trees for all the predicates before we do anything else
     if (!this.gotPredicateParseTrees) {
       this.getPredicateParseTrees();
@@ -66,7 +72,21 @@ export class ForgeExprEvaluatorUtil {
     const tree = this.getExpressionParseTree(forgeExpr);
     const evaluator = new ForgeExprEvaluator(this.datum, instanceIndex, this.predicates);
 
-    // ensure we're visiting an ExprContext
-    return evaluator.visit(tree instanceof ExprContext ? tree : tree.getChild(0));
+    try {
+      // ensure we're visiting an ExprContext
+      return evaluator.visit(tree instanceof ExprContext ? tree : tree.getChild(0));
+    } catch (error) {
+      if (error instanceof Error) {
+        const stackTrace = error.stack;
+        const errorMessage = error.message;
+        return {
+          error: new Error(`Error evaluating expression "${forgeExpr}": ${errorMessage}`),
+          stackTrace: stackTrace
+        };
+      }
+      return {
+        error: new Error(`Error evaluating expression "${forgeExpr}"`)
+      };
+    }
   }
 }

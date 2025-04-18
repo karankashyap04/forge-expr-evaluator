@@ -1,8 +1,14 @@
 import { PredDeclContext } from './forge-antlr/ForgeParser';
 import { ForgeListenerImpl } from './forge-antlr/ForgeListenerImpl';
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker';
+import { EvalResult } from './ForgeExprEvaluator';
 import { DatumParsed } from './types';
 import { Predicate } from './types';
+type ErrorResult = {
+    error: Error;
+    stackTrace?: string;
+};
+type EvaluationResult = EvalResult | ErrorResult;
 export declare class ForgeExprEvaluatorUtil {
     datum: DatumParsed;
     predicates: Predicate[];
@@ -13,5 +19,6 @@ export declare class ForgeExprEvaluatorUtil {
     getPredParseTree(forgePred: string): PredDeclContext;
     getExpressionParseTree(forgeExpr: string): import("./forge-antlr/ForgeParser").ParseExprContext;
     private getPredicateParseTrees;
-    evaluateExpression(forgeExpr: string, instanceIndex?: number): string | import("./ForgeExprEvaluator").Tuple[];
+    evaluateExpression(forgeExpr: string, instanceIndex?: number): EvaluationResult;
 }
+export {};

@@ -7,26 +7,35 @@ const TRUE_LITERAL = '#t';
 const FALSE_LITERAL = '#f';
 ///// HELPER FUNCTIONS /////
 function isSingleValue(value) {
-    return typeof value === 'string';
+    return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
 }
 function isTupleArray(value) {
     return Array.isArray(value);
 }
-function getBooleanValue(value) {
-    if (value === 'true' || value === TRUE_LITERAL) {
-        return true;
-    }
-    if (value === 'false' || value === FALSE_LITERAL) {
-        return false;
-    }
-    throw new Error('Expected value to be boolean');
+function isBoolean(value) {
+    return typeof value === 'boolean';
 }
-function getNumberValue(value) {
-    if (typeof value === 'string') {
-        return Number(value);
-    }
-    throw new Error('Expected value to be a number');
+function isNumber(value) {
+    return typeof value === 'number';
 }
+function isString(value) {
+    return typeof value === 'string';
+}
+// function getBooleanValue(value: EvalResult): boolean {
+//   if (value === 'true' || value === TRUE_LITERAL || value === true) {
+//     return true;
+//   }
+//   if (value === 'false' || value === FALSE_LITERAL || value === false) {
+//     return false;
+//   }
+//   throw new Error('Expected value to be boolean');
+// }
+// function getNumberValue(value: EvalResult): number {
+//   if (typeof value === 'string') {
+//     return Number(value);
+//   }
+//   throw new Error('Expected value to be a number');
+// }
 function areTuplesEqual(a, b) {
     return a.length === b.length && a.every((val, i) => val === b[i]);
 }
@@ -113,7 +122,9 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     argValue = argValue[0]; // if it's a single value in an array, just use the value
                 }
                 bindings.env[argNames[i]] =
-                    typeof argValue === 'string' ? argValue : [argValue];
+                    (typeof argValue === 'string' || typeof argValue === 'number' || typeof argValue === 'boolean')
+                        ? argValue
+                        : [argValue];
             }
         }
         console.log('bindings:', bindings);
@@ -134,9 +145,9 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     }
     // THIS SEEMS KINDA JANKY... IS THIS REALLY WHAT WE WANT??
     aggregateResult(aggregate, nextResult) {
-        if (aggregate.length === 0)
+        if (isTupleArray(aggregate) && aggregate.length === 0)
             return nextResult; // Prioritize non-default values
-        if (nextResult.length === 0)
+        if (isTupleArray(nextResult) && nextResult.length === 0)
             return aggregate;
         // return aggregate.concat(nextResult); // Merge results when possible
         if (isSingleValue(aggregate)) {
@@ -172,18 +183,21 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         let result = undefined;
         for (const expr of ctx.expr()) {
             const exprResult = this.visit(expr);
+            if (!isBoolean(exprResult)) {
+                throw new Error('Each expr in a block must evaluate to a boolean!');
+            }
             if (result === undefined) {
                 result = exprResult;
             }
             else {
-                const resultBool = getBooleanValue(result);
-                const exprBool = getBooleanValue(exprResult);
-                result = resultBool && exprBool ? TRUE_LITERAL : FALSE_LITERAL;
+                // const resultBool = getBooleanValue(result);
+                // const exprBool = getBooleanValue(exprResult);
+                result = result && exprResult;
             }
         }
         console.log('returning from block:', result);
         if (result === undefined) {
-            throw new Error('Expected result to be defined');
+            throw new Error('Expected the block to be nonempty!');
         }
         return result;
     }
@@ -257,7 +271,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 this.environmentStack.push(quantDeclEnv);
                 // now, we want to evaluate the barExpr
                 const barExprValue = this.visit(barExpr);
-                if (getBooleanValue(barExprValue)) { // will error if not boolean val, which we want
+                if (!isBoolean(barExprValue)) {
+                    throw new Error('Expected the expression after the bar to be a boolean!');
+                }
+                if (barExprValue) {
                     result.push(tuple);
                     foundTrue = true;
                 }
@@ -267,21 +284,21 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 this.environmentStack.pop();
             }
             if (ctx.quant().ALL_TOK()) {
-                return !foundFalse ? TRUE_LITERAL : FALSE_LITERAL;
+                return !foundFalse;
             }
             else if (ctx.quant().NO_TOK()) {
-                return !foundTrue ? TRUE_LITERAL : FALSE_LITERAL;
+                return !foundTrue;
             }
             else if (ctx.quant().mult()) {
                 const multExpr = ctx.quant().mult();
                 if (multExpr.LONE_TOK()) {
-                    return result.length <= 1 ? TRUE_LITERAL : FALSE_LITERAL;
+                    return result.length <= 1;
                 }
                 else if (multExpr.SOME_TOK()) {
-                    return foundTrue ? TRUE_LITERAL : FALSE_LITERAL;
+                    return foundTrue;
                 }
                 else if (multExpr.ONE_TOK()) {
-                    result.length === 1 ? TRUE_LITERAL : FALSE_LITERAL;
+                    result.length === 1;
                 }
                 else if (multExpr.TWO_TOK()) {
                     throw new Error('**NOT IMPLEMENTING FOR NOW** Two (`two`)');
@@ -316,9 +333,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             }
             const leftChildValue = this.visit(ctx.expr1());
             const rightChildValue = this.visit(ctx.expr1_5());
-            const leftBool = getBooleanValue(leftChildValue);
-            const rightBool = getBooleanValue(rightChildValue);
-            return leftBool || rightBool ? TRUE_LITERAL : FALSE_LITERAL;
+            if (!isBoolean(leftChildValue) || !isBoolean(rightChildValue)) {
+                throw new Error('OR operator expected 2 boolean operands!');
+            }
+            return leftChildValue || rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr1:', childrenResults);
@@ -332,9 +350,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             }
             const leftChildValue = this.visit(ctx.expr1_5());
             const rightChildValue = this.visit(ctx.expr2());
-            const leftBool = getBooleanValue(leftChildValue);
-            const rightBool = getBooleanValue(rightChildValue);
-            return leftBool !== rightBool ? TRUE_LITERAL : FALSE_LITERAL;
+            if (!isBoolean(leftChildValue) || !isBoolean(rightChildValue)) {
+                throw new Error('XOR operator expected 2 boolean operands!');
+            }
+            return leftChildValue !== rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr1_5:', childrenResults);
@@ -348,9 +367,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             }
             const leftChildValue = this.visit(ctx.expr2());
             const rightChildValue = this.visit(ctx.expr3());
-            const leftBool = getBooleanValue(leftChildValue);
-            const rightBool = getBooleanValue(rightChildValue);
-            return leftBool === rightBool ? TRUE_LITERAL : FALSE_LITERAL;
+            if (!isBoolean(leftChildValue) || !isBoolean(rightChildValue)) {
+                throw new Error('IFF operator expected 2 boolean operands!');
+            }
+            return leftChildValue === rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr2:', childrenResults);
@@ -365,9 +385,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const leftChildValue = this.visit(ctx.expr4());
             const rightChildValue = this.visit(ctx.expr3()[0]);
             // TODO: add support for ELSE_TOK over here
-            const leftBool = getBooleanValue(leftChildValue);
-            const rightBool = getBooleanValue(rightChildValue);
-            return !leftBool || rightBool ? TRUE_LITERAL : FALSE_LITERAL;
+            if (!isBoolean(leftChildValue) || !isBoolean(rightChildValue)) {
+                throw new Error('IMP operator expected 2 boolean operands!');
+            }
+            return !leftChildValue || rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr3:', childrenResults);
@@ -381,9 +402,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             }
             const leftChildValue = this.visit(ctx.expr4());
             const rightChildValue = this.visit(ctx.expr4_5());
-            const leftBool = getBooleanValue(leftChildValue);
-            const rightBool = getBooleanValue(rightChildValue);
-            return leftBool && rightBool ? TRUE_LITERAL : FALSE_LITERAL;
+            if (!isBoolean(leftChildValue) || !isBoolean(rightChildValue)) {
+                throw new Error('AND operator expected 2 boolean operands!');
+            }
+            return leftChildValue && rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr4:', childrenResults);
@@ -448,8 +470,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         const childrenResults = this.visit(ctx.expr5());
         console.log('childrenResults in expr5:', childrenResults);
         if (ctx.NEG_TOK()) {
-            const childValue = getBooleanValue(childrenResults);
-            return childValue ? FALSE_LITERAL : TRUE_LITERAL;
+            if (!isBoolean(childrenResults)) {
+                throw new Error('Expected the negation operator to have a boolean operand!');
+            }
+            return !childrenResults;
         }
         if (ctx.ALWAYS_TOK()) {
             results.push(['**UNIMPLEMENTED** Temporal Operator (`always`)']);
@@ -519,57 +543,54 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     // TODO: this equality implementation DOES NOT MATCH FORGE RIGHT NOW!!
                     // THIS IS JUST A TEMPORARY JANKY THING TO TEST OUT SOME VIZ STUFF THAT RELIED ON EQUALITY
                     if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
-                        results = leftChildValue === rightChildValue ? TRUE_LITERAL : FALSE_LITERAL;
+                        results = leftChildValue === rightChildValue;
                     }
                     else {
                         results =
-                            JSON.stringify(leftChildValue) === JSON.stringify(rightChildValue)
-                                ? TRUE_LITERAL
-                                : FALSE_LITERAL;
+                            JSON.stringify(leftChildValue) === JSON.stringify(rightChildValue);
                     }
                     break;
                 case '<':
-                    results =
-                        getNumberValue(leftChildValue) < getNumberValue(rightChildValue)
-                            ? TRUE_LITERAL
-                            : FALSE_LITERAL;
+                    if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
+                        throw new Error(`Expected the < operator to have 2 number operands, got ${typeof leftChildValue} and ${typeof rightChildValue}!`);
+                    }
+                    results = leftChildValue < rightChildValue;
                     break;
                 case '>':
-                    results =
-                        getNumberValue(leftChildValue) > getNumberValue(rightChildValue)
-                            ? TRUE_LITERAL
-                            : FALSE_LITERAL;
-                    console.log('setting the result here:', results);
+                    if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
+                        throw new Error('Expected the > operator to have 2 number operands!');
+                    }
+                    results = leftChildValue > rightChildValue;
                     break;
                 case '<=':
-                    results =
-                        getNumberValue(leftChildValue) <= getNumberValue(rightChildValue)
-                            ? TRUE_LITERAL
-                            : FALSE_LITERAL;
+                    if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
+                        throw new Error('Expected the <= operator to have 2 number operands!');
+                    }
+                    results = leftChildValue <= rightChildValue;
                     break;
                 case '>=':
-                    results =
-                        getNumberValue(leftChildValue) >= getNumberValue(rightChildValue)
-                            ? TRUE_LITERAL
-                            : FALSE_LITERAL;
+                    if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
+                        throw new Error('Expected the >= operator to have 2 number operands!');
+                    }
+                    results = leftChildValue >= rightChildValue;
                     break;
                 case 'in':
                     // this should be true if the left value is equal to the right value,
                     // or a subset of it
                     if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
                         if (areTupleArraysEqual(leftChildValue, rightChildValue)) {
-                            results = TRUE_LITERAL;
+                            results = true;
                         }
                         else {
                             // check if left is subset of right
-                            results = isTupleArraySubset(leftChildValue, rightChildValue) ? TRUE_LITERAL : FALSE_LITERAL;
+                            results = isTupleArraySubset(leftChildValue, rightChildValue);
                         }
                     }
                     else if (isTupleArray(rightChildValue)) {
-                        results = rightChildValue.some((tuple) => tuple.length === 1 && tuple[0] === leftChildValue) ? TRUE_LITERAL : FALSE_LITERAL;
+                        results = rightChildValue.some((tuple) => tuple.length === 1 && tuple[0] === leftChildValue);
                     }
                     else { // left is a tuple array but right is a single value, so false
-                        results = FALSE_LITERAL;
+                        results = false;
                     }
                     break;
                 case 'is':
@@ -589,7 +610,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             }
         }
         if (toNegate) {
-            return getBooleanValue(results) ? FALSE_LITERAL : TRUE_LITERAL;
+            if (!isBoolean(results)) {
+                throw new Error('Expected the negation operator to have a boolean operand!');
+            }
+            return !results;
         }
         if (foundValue) {
             console.log('found value; returning:', results);
@@ -606,31 +630,19 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             throw new Error('**NOT IMPLEMENTING FOR NOW** Set (`set`)');
         }
         if (ctx.ONE_TOK()) {
-            if (isTupleArray(childrenResults) && childrenResults.length === 1) {
-                return TRUE_LITERAL;
-            }
-            return FALSE_LITERAL;
+            return isTupleArray(childrenResults) && childrenResults.length === 1;
         }
         if (ctx.TWO_TOK()) {
             throw new Error('**NOT IMPLEMENTING FOR NOW** Two (`two`)');
         }
         if (ctx.NO_TOK()) {
-            if (isTupleArray(childrenResults) && childrenResults.length === 0) {
-                return TRUE_LITERAL;
-            }
-            return FALSE_LITERAL;
+            return isTupleArray(childrenResults) && childrenResults.length === 0;
         }
         if (ctx.SOME_TOK()) {
-            if (isTupleArray(childrenResults) && childrenResults.length > 0) {
-                return TRUE_LITERAL;
-            }
-            return FALSE_LITERAL;
+            return isTupleArray(childrenResults) && childrenResults.length > 0;
         }
         if (ctx.LONE_TOK()) {
-            if (isTupleArray(childrenResults) && childrenResults.length <= 1) {
-                return TRUE_LITERAL;
-            }
-            return FALSE_LITERAL;
+            return isTupleArray(childrenResults) && childrenResults.length <= 1;
         }
         return childrenResults;
     }
@@ -730,7 +742,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         const childrenResults = this.visitChildren(ctx);
         console.log('childrenResults in expr9:', childrenResults);
         if (ctx.CARD_TOK()) {
-            return `${childrenResults.length}`;
+            if (!isTupleArray(childrenResults)) {
+                throw new Error('The cardinal operator must be applied to a set of tuples!');
+            }
+            return childrenResults.length;
         }
         return childrenResults;
     }
@@ -848,7 +863,9 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             console.log('insideBracesExprs:', insideBracesExprs);
             // check if it is a predicate that is being called
             console.log('predicates:', this.predicates);
-            if (isSingleValue(beforeBracesExpr) && this.isPredicateName(beforeBracesExpr)) {
+            if (isSingleValue(beforeBracesExpr) &&
+                isString(beforeBracesExpr) &&
+                this.isPredicateName(beforeBracesExpr)) {
                 const predicate = this.getPredicate(beforeBracesExpr);
                 return this.callPredicate(predicate, insideBracesExprs);
             }
@@ -862,21 +879,33 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     // const arg1 = getNumberValue(insideBracesExprs[0][0]);
                     let arg1;
                     if ((0, lodash_1.isArray)(insideBracesExprs[0])) {
-                        arg1 = getNumberValue(insideBracesExprs[0][0]);
+                        if (!isNumber(insideBracesExprs[0][0])) {
+                            throw new Error('Expected a number for the first argument of add');
+                        }
+                        arg1 = insideBracesExprs[0][0];
                     }
                     else {
-                        arg1 = getNumberValue(insideBracesExprs[0]);
+                        if (!isNumber(insideBracesExprs[0])) {
+                            throw new Error('Expected a number for the first argument of add');
+                        }
+                        arg1 = insideBracesExprs[0];
                     }
                     // const arg2 = getNumberValue(insideBracesExprs[1][0]);
                     let arg2;
                     if ((0, lodash_1.isArray)(insideBracesExprs[1])) {
-                        arg2 = getNumberValue(insideBracesExprs[1][0]);
+                        if (!isNumber(insideBracesExprs[1][0])) {
+                            throw new Error('Expected a number for the second argument of add');
+                        }
+                        arg2 = insideBracesExprs[1][0];
                     }
                     else {
-                        arg2 = getNumberValue(insideBracesExprs[1]);
+                        if (!isNumber(insideBracesExprs[1])) {
+                            throw new Error('Expected a number for the second argument of add');
+                        }
+                        arg2 = insideBracesExprs[1];
                     }
                     // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
-                    return `${arg1 + arg2}`;
+                    return arg1 + arg2;
                 }
             }
             // subtract
@@ -888,21 +917,33 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     // const arg1 = getNumberValue(insideBracesExprs[0][0]);
                     let arg1;
                     if ((0, lodash_1.isArray)(insideBracesExprs[0])) {
-                        arg1 = getNumberValue(insideBracesExprs[0][0]);
+                        if (!isNumber(insideBracesExprs[0][0])) {
+                            throw new Error('Expected a number for the first argument of subtract');
+                        }
+                        arg1 = insideBracesExprs[0][0];
                     }
                     else {
-                        arg1 = getNumberValue(insideBracesExprs[0]);
+                        if (!isNumber(insideBracesExprs[0])) {
+                            throw new Error('Expected a number for the first argument of subtract');
+                        }
+                        arg1 = insideBracesExprs[0];
                     }
                     // const arg2 = getNumberValue(insideBracesExprs[1][0]);
                     let arg2;
                     if ((0, lodash_1.isArray)(insideBracesExprs[1])) {
-                        arg2 = getNumberValue(insideBracesExprs[1][0]);
+                        if (!isNumber(insideBracesExprs[1][0])) {
+                            throw new Error('Expected a number for the second argument of subtract');
+                        }
+                        arg2 = insideBracesExprs[1][0];
                     }
                     else {
-                        arg2 = getNumberValue(insideBracesExprs[1]);
+                        if (!isNumber(insideBracesExprs[1])) {
+                            throw new Error('Expected a number for the second argument of subtract');
+                        }
+                        arg2 = insideBracesExprs[1];
                     }
                     // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
-                    return `${arg1 - arg2}`;
+                    return arg1 - arg2;
                 }
             }
             if (isTupleArray(beforeBracesExpr)) {
@@ -1076,7 +1117,12 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         console.log('visiting expr18:', ctx.text);
         let results = [];
         if (ctx.const()) {
-            return `${ctx.const()?.text}`;
+            const constant = ctx.const();
+            if (constant.number() !== undefined) {
+                const num = Number(constant.number().text);
+                return constant.MINUS_TOK() !== undefined ? -num : num;
+            }
+            return `${constant.text}`;
         }
         if (ctx.qualName()) {
             return this.visitQualName(ctx.qualName());
@@ -1131,7 +1177,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 this.environmentStack.push(quantDeclEnv);
                 // now, we want to evaluate the barExpr
                 const barExprValue = this.visit(barExpr);
-                if (getBooleanValue(barExprValue)) { // will error if not boolean val, which we want
+                if (!isBoolean(barExprValue)) {
+                    throw new Error('Expected the expression after the bar to be a boolean value!');
+                }
+                if (barExprValue) { // will error if not boolean val, which we want
                     result.push(tuple);
                 }
                 this.environmentStack.pop();
@@ -1188,10 +1237,10 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         // if `true` or `false`, return the corresponding value
         const identifier = ctx.IDENTIFIER_TOK().text;
         if (identifier === 'true') {
-            return TRUE_LITERAL;
+            return true;
         }
         if (identifier === 'false') {
-            return FALSE_LITERAL;
+            return false;
         }
         console.log('need to find an identifier:', identifier);
         // console.log(this.instanceData);
@@ -1285,16 +1334,52 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 }
             }
         }
+        // defining 3 helper functions here; not for use elsewhere
+        const isConvertibleToNumber = (value) => {
+            if (typeof value === 'number') {
+                return true;
+            }
+            if (typeof value === 'string') {
+                return !isNaN(Number(value));
+            }
+            return false;
+        };
+        const isConvertibleToBoolean = (value) => {
+            if (typeof value === 'boolean') {
+                return true;
+            }
+            if (typeof value === 'string') {
+                return value === 'true' || value === '#t' || value === 'false' || value === '#f';
+            }
+            return false;
+        };
+        const convertToBoolean = (value) => {
+            if (typeof value === 'boolean') {
+                return value;
+            }
+            if (value === 'true' || value === '#t') {
+                return true;
+            }
+            if (value === 'false' || value === '#f') {
+                return false;
+            }
+            throw new Error(`Cannot convert ${value} to boolean`);
+        };
+        // end of 3 helper functions
         // check if it is a relation
         const relationKeys = Object.keys(this.instanceData.relations);
         for (const relationKey of relationKeys) {
             const relationName = this.instanceData.relations[relationKey].name;
             if (relationName === identifier) {
-                const relationAtoms = this.instanceData.relations[relationKey].tuples.map((tuple) => tuple.atoms);
+                let relationAtoms = this.instanceData.relations[relationKey].tuples.map((tuple) => tuple.atoms);
+                relationAtoms = relationAtoms.map((tuple) => tuple.map((value) => isConvertibleToNumber(value) ? Number(value) : value));
+                relationAtoms = relationAtoms.map((tuple) => tuple.map((value) => isConvertibleToBoolean(value) ? convertToBoolean(value) : value));
                 return relationAtoms;
             }
         }
         if (result !== undefined) {
+            result = result.map((tuple) => tuple.map((value) => isConvertibleToNumber(value) ? Number(value) : value));
+            result = result.map((tuple) => tuple.map((value) => isConvertibleToBoolean(value) ? convertToBoolean(value) : value));
             return result;
         }
         // return identifier;
@@ -1308,7 +1393,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         // of the qualName nonterminal
         console.log('visiting qualName:', ctx.text);
         if (ctx.INT_TOK()) {
-            const intVals = this.instanceData.types.Int.atoms.map((atom) => [atom.id]);
+            const intVals = this.instanceData.types.Int.atoms.map((atom) => [Number(atom.id)]);
             return intVals;
         }
         return this.visitChildren(ctx);

@@ -51,8 +51,23 @@ class ForgeExprEvaluatorUtil {
         // now, we can actually evaluate the expression
         const tree = this.getExpressionParseTree(forgeExpr);
         const evaluator = new ForgeExprEvaluator_1.ForgeExprEvaluator(this.datum, instanceIndex, this.predicates);
-        // ensure we're visiting an ExprContext
-        return evaluator.visit(tree instanceof ForgeParser_1.ExprContext ? tree : tree.getChild(0));
+        try {
+            // ensure we're visiting an ExprContext
+            return evaluator.visit(tree instanceof ForgeParser_1.ExprContext ? tree : tree.getChild(0));
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                const stackTrace = error.stack;
+                const errorMessage = error.message;
+                return {
+                    error: new Error(`Error evaluating expression "${forgeExpr}": ${errorMessage}`),
+                    stackTrace: stackTrace
+                };
+            }
+            return {
+                error: new Error(`Error evaluating expression "${forgeExpr}"`)
+            };
+        }
     }
 }
 exports.ForgeExprEvaluatorUtil = ForgeExprEvaluatorUtil;
