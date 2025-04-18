@@ -1122,50 +1122,27 @@ export class ForgeExprEvaluator
       }
       const beforeDotExpr = this.visit(ctx.expr15()!);
       const afterDotExpr = this.visit(ctx.expr16()!);
-      //console.log('beforeExpr:', beforeDotExpr);
-      //console.log('afterExpr:', afterDotExpr);
+      // console.log('beforeExpr:', beforeDotExpr);
+      // console.log('afterExpr:', afterDotExpr);
 
-      if (
-        isTupleArray(beforeDotExpr) &&
-        beforeDotExpr.length === 1 &&
-        beforeDotExpr[0].length === 1
-      ) {
-        const joinValue = beforeDotExpr[0][0];
-
-        if (isTupleArray(afterDotExpr)) {
-          results = afterDotExpr
-            .filter((tuple) => tuple[0] === joinValue)
-            .map((tuple) => tuple.slice(1));
-          if (results.some((tuple) => tuple.length === 0)) {
-            throw new Error('Join would create a relation of arity 0');
-          }
-          return results;
-        } else {
-          throw new Error(
-            'One of the relations being joined must have arity 1'
-          );
-        }
-      } else if (
-        isTupleArray(afterDotExpr) &&
-        afterDotExpr.length === 1 &&
-        afterDotExpr[0].length === 1
-      ) {
-        const joinValue = afterDotExpr[0][0];
-
-        if (isTupleArray(beforeDotExpr)) {
-          results = beforeDotExpr
-            .filter((tuple) => tuple[tuple.length - 1] === joinValue)
-            .map((tuple) => tuple.slice(0, tuple.length - 1));
-          if (results.some((tuple) => tuple.length === 0)) {
-            throw new Error('Join would create a relation of arity 0');
-          }
-          return results;
-        } else {
-          throw new Error(
-            'One of the relations being joined must have arity 1'
-          );
-        }
+      if (!isTupleArray(beforeDotExpr) || !isTupleArray(afterDotExpr)) {
+        throw new Error('Expected the dot operator to operate on 2 sets!');
       }
+
+      const result: Tuple[] = [];
+      beforeDotExpr.forEach((leftTuple) => {
+        afterDotExpr.forEach((rightTuple) => {
+          if (leftTuple[leftTuple.length - 1] === rightTuple[0]) {
+            result.push([...leftTuple.slice(0, leftTuple.length - 1), ...rightTuple.slice(1)]);
+          }
+        });
+      });
+
+      if (result.some((tuple) => tuple.length === 0)) {
+        throw new Error('Join would create a relation of arity 0');
+      }
+
+      return result;
     }
 
     if (ctx.LEFT_SQUARE_TOK()) {

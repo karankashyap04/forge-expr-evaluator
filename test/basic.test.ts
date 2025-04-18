@@ -230,6 +230,26 @@ describe("forge-expr-evaluator", () => {
     expect(result).toEqual([["Board0"]]);
   });
 
+  it("can evaluate a dot join when neither relation is a singleton", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "Game.next.(Game.next)";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    console.log('result:', result);
+
+    expect(result).toEqual([
+      ["Board0", "Board2"],
+      ["Board1", "Board3"],
+      ["Board2", "Board4"],
+      ["Board3", "Board5"],
+      ["Board4", "Board6"],
+    ]);
+  });
+
   it("can evaluate a number", () => {
     const datum: DatumParsed = interSigDatum;
     const sourceCode = getCodeFromDatum(datum);
