@@ -40,8 +40,8 @@ const FALSE_LITERAL = '#f';
 
 
 ///// DEFINING SOME USEFUL TYPES /////
-type SingleValue = string | number | boolean;
-type Tuple = SingleValue[];
+export type SingleValue = string | number | boolean;
+export type Tuple = SingleValue[];
 export type EvalResult = SingleValue | Tuple[];
 
 type Environment = {
@@ -176,7 +176,7 @@ export class ForgeExprEvaluator
 
   // helper function
   private callPredicate(predicate: Predicate, evaluatedArgs: EvalResult): EvalResult {
-    console.log('trying to call predicate:', predicate.name);
+    //console.log('trying to call predicate:', predicate.name);
     // check if the expected number of args has been provided
     const expectedArgs = predicate.args ? predicate.args.length : 0;
     const providedArgs = Array.isArray(evaluatedArgs) ? evaluatedArgs.length : 1;
@@ -205,20 +205,20 @@ export class ForgeExprEvaluator
           : [argValue];
       }
     }
-    console.log('bindings:', bindings);
+    //console.log('bindings:', bindings);
 
     // add the environment for the callee onto the stack
     this.environmentStack.push(bindings);
 
     // get the parse tree for the predicate
     const tree = predicate.predTree;
-    console.log('tree:', tree);
+    //console.log('tree:', tree);
     if (tree === undefined) {
       throw new Error(`No parse tree found for predicate ${predicate.name}`);
     }
     // evaluate the predicate
     const result = this.visit(tree);
-    console.log('pred evaluated; result:', result);
+    //console.log('pred evaluated; result:', result);
 
     // remove the environment for the callee from the stack
     this.environmentStack.pop();
@@ -246,20 +246,20 @@ export class ForgeExprEvaluator
   }
 
   protected defaultResult(): EvalResult {
-    console.log('default result');
+    //console.log('default result');
     return [];
   }
 
   visitPredDecl(ctx: PredDeclContext): EvalResult {
-    console.log('visiting pred');
-    console.log('ctx.block().text:', ctx.block().text);
+    //console.log('visiting pred');
+    //console.log('ctx.block().text:', ctx.block().text);
     const visitResult = this.visit(ctx.block());
     return visitResult;
   }
 
   visitBlock(ctx: BlockContext): EvalResult {
-    console.log('visiting block');
-    console.log('ctx.text:', ctx.text);
+    //console.log('visiting block');
+    //console.log('ctx.text:', ctx.text);
     let result: boolean | undefined = undefined;
     for (const expr of ctx.expr()) {
       const exprResult = this.visit(expr);
@@ -274,7 +274,7 @@ export class ForgeExprEvaluator
         result = result && exprResult;
       }
     }
-    console.log('returning from block:', result);
+    //console.log('returning from block:', result);
     if (result === undefined) {
       throw new Error('Expected the block to be nonempty!');
     }
@@ -282,7 +282,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr(ctx: ExprContext): EvalResult {
-    console.log('visiting expr: ', ctx.text);
+    //console.log('visiting expr: ', ctx.text);
     let results: EvalResult | undefined = undefined;
 
     if (ctx.LET_TOK()) {
@@ -394,9 +394,9 @@ export class ForgeExprEvaluator
 
     // TODO: fix this!
     const childrenResults = this.visitChildren(ctx);
-    console.log('childrenResults in expr:', childrenResults);
+    //console.log('childrenResults in expr:', childrenResults);
     if (results === undefined) {
-      console.log('returning childrenResults in expr:', childrenResults);
+      //console.log('returning childrenResults in expr:', childrenResults);
       return childrenResults;
     }
     if (isSingleValue(results)) {
@@ -407,12 +407,12 @@ export class ForgeExprEvaluator
     } else {
       results = results.concat(childrenResults);
     }
-    console.log('results being returned in expr:', results);
+    //console.log('results being returned in expr:', results);
     return results;
   }
 
   visitExpr1(ctx: Expr1Context): EvalResult {
-    console.log('visiting expr1:', ctx.text);
+    //console.log('visiting expr1:', ctx.text);
 
     if (ctx.OR_TOK()) {
       if (ctx.expr1_5() === undefined || ctx.expr1_5() === undefined) {
@@ -429,12 +429,12 @@ export class ForgeExprEvaluator
     }
 
     const childrenResults = this.visitChildren(ctx);
-    console.log('childrenResults in expr1:', childrenResults);
+    //console.log('childrenResults in expr1:', childrenResults);
     return childrenResults;
   }
 
   visitExpr1_5(ctx: Expr1_5Context): EvalResult {
-    console.log('visiting expr1_5:', ctx.text);
+    //console.log('visiting expr1_5:', ctx.text);
 
     if (ctx.XOR_TOK()) {
       if (ctx.expr1_5() === undefined || ctx.expr2() === undefined) {
@@ -451,12 +451,12 @@ export class ForgeExprEvaluator
     }
 
     const childrenResults = this.visitChildren(ctx);
-    console.log('childrenResults in expr1_5:', childrenResults);
+    //console.log('childrenResults in expr1_5:', childrenResults);
     return childrenResults;
   }
 
   visitExpr2(ctx: Expr2Context): EvalResult {
-    console.log('visiting expr2:', ctx.text);
+    //console.log('visiting expr2:', ctx.text);
 
     if (ctx.IFF_TOK()) {
       if (ctx.expr2() === undefined || ctx.expr3() === undefined) {
@@ -473,12 +473,12 @@ export class ForgeExprEvaluator
     }
 
     const childrenResults = this.visitChildren(ctx);
-    console.log('childrenResults in expr2:', childrenResults);
+    //console.log('childrenResults in expr2:', childrenResults);
     return childrenResults;
   }
 
   visitExpr3(ctx: Expr3Context): EvalResult {
-    console.log('visiting expr3:', ctx.text);
+    //console.log('visiting expr3:', ctx.text);
 
     if (ctx.IMP_TOK()) {
       if (ctx.expr3() === undefined || ctx.expr4() === undefined) {
@@ -496,12 +496,12 @@ export class ForgeExprEvaluator
     }
 
     const childrenResults = this.visitChildren(ctx);
-    console.log('childrenResults in expr3:', childrenResults);
+    //console.log('childrenResults in expr3:', childrenResults);
     return childrenResults;
   }
 
   visitExpr4(ctx: Expr4Context): EvalResult {
-    console.log('visiting expr4:', ctx.text);
+    //console.log('visiting expr4:', ctx.text);
 
     if (ctx.AND_TOK()) {
       if (ctx.expr4() === undefined || ctx.expr4_5() === undefined) {
@@ -518,12 +518,12 @@ export class ForgeExprEvaluator
     }
 
     const childrenResults = this.visitChildren(ctx);
-    console.log('childrenResults in expr4:', childrenResults);
+    //console.log('childrenResults in expr4:', childrenResults);
     return childrenResults;
   }
 
   visitExpr4_5(ctx: Expr4_5Context): EvalResult {
-    console.log('visiting expr4_5:', ctx.text);
+    //console.log('visiting expr4_5:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.UNTIL_TOK()) {
@@ -572,12 +572,12 @@ export class ForgeExprEvaluator
     }
 
     const childrenResults = this.visitChildren(ctx);
-    console.log('childrenResults in expr4_5:', childrenResults);
+    //console.log('childrenResults in expr4_5:', childrenResults);
     return childrenResults;
   }
 
   visitExpr5(ctx: Expr5Context): EvalResult {
-    console.log('visiting expr5:', ctx.text);
+    //console.log('visiting expr5:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.expr6()) {
@@ -588,7 +588,7 @@ export class ForgeExprEvaluator
       throw new Error('Expected the temporal operator to have 1 operand!');
     }
     const childrenResults = this.visit(ctx.expr5()!);
-    console.log('childrenResults in expr5:', childrenResults);
+    //console.log('childrenResults in expr5:', childrenResults);
 
     if (ctx.NEG_TOK()) {
       if (!isBoolean(childrenResults)) {
@@ -639,12 +639,12 @@ export class ForgeExprEvaluator
       return results;
     }
 
-    console.log('returning from the bottom:', childrenResults);
+    //console.log('returning from the bottom:', childrenResults);
     return childrenResults;
   }
 
   visitExpr6(ctx: Expr6Context): EvalResult {
-    console.log('visiting expr6:', ctx.text);
+    //console.log('visiting expr6:', ctx.text);
     let results: EvalResult = [];
 
     let toNegate = false;
@@ -660,8 +660,8 @@ export class ForgeExprEvaluator
       }
       const leftChildValue = this.visit(ctx.expr6()!);
       const rightChildValue = this.visit(ctx.expr7()!);
-      console.log('left child value:', leftChildValue);
-      console.log('right child value:', rightChildValue);
+      //console.log('left child value:', leftChildValue);
+      //console.log('right child value:', rightChildValue);
       switch (ctx.compareOp()?.text) {
         case '=':
           // results.push(['**UNIMPLEMENTED** Equality Check (`=`)']);
@@ -741,7 +741,7 @@ export class ForgeExprEvaluator
     }
 
     if (foundValue) {
-      console.log('found value; returning:', results);
+      //console.log('found value; returning:', results);
       return results;
     }
 
@@ -749,11 +749,11 @@ export class ForgeExprEvaluator
   }
 
   visitExpr7(ctx: Expr7Context): EvalResult {
-    console.log('visiting expr7:', ctx.text);
+    //console.log('visiting expr7:', ctx.text);
     let results: EvalResult = [];
 
     const childrenResults = this.visit(ctx.expr8());
-    console.log('childrenResults:', childrenResults);
+    //console.log('childrenResults:', childrenResults);
 
     if (ctx.SET_TOK()) {
       throw new Error('**NOT IMPLEMENTING FOR NOW** Set (`set`)');
@@ -778,7 +778,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr8(ctx: Expr8Context): EvalResult {
-    console.log('visiting expr8:', ctx.text);
+    //console.log('visiting expr8:', ctx.text);
 
     if (ctx.PLUS_TOK()) {
       const leftChildValue = this.visit(ctx.expr8()!);
@@ -829,7 +829,7 @@ export class ForgeExprEvaluator
         if (leftChildValue === rightChildValue) {
           return [];
         }
-        console.log('returning leftChildValue:', leftChildValue);
+        //console.log('returning leftChildValue:', leftChildValue);
         return leftChildValue;
       } else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
         if (rightChildValue.length === 0) {
@@ -866,9 +866,9 @@ export class ForgeExprEvaluator
   }
 
   visitExpr9(ctx: Expr9Context): EvalResult {
-    console.log('visiting expr9:', ctx.text);
+    //console.log('visiting expr9:', ctx.text);
     const childrenResults = this.visitChildren(ctx);
-    console.log('childrenResults in expr9:', childrenResults);
+    //console.log('childrenResults in expr9:', childrenResults);
 
     if (ctx.CARD_TOK()) {
       if (!isTupleArray(childrenResults)) {
@@ -881,7 +881,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr10(ctx: Expr10Context): EvalResult {
-    console.log('visiting expr10:', ctx.text);
+    //console.log('visiting expr10:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.PPLUS_TOK()) {
@@ -897,7 +897,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr11(ctx: Expr11Context): EvalResult {
-    console.log('visiting expr11:', ctx.text);
+    //console.log('visiting expr11:', ctx.text);
 
     if (ctx.AMP_TOK()) {
       if (ctx.expr11() === undefined || ctx.expr12() === undefined) {
@@ -941,7 +941,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr12(ctx: Expr12Context): EvalResult {
-    console.log('visiting expr12:', ctx.text);
+    //console.log('visiting expr12:', ctx.text);
 
     if (ctx.arrowOp()) {
       if (ctx.expr12() === undefined || ctx.expr13() === undefined) {
@@ -974,7 +974,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr13(ctx: Expr13Context): EvalResult {
-    console.log('visiting expr13:', ctx.text);
+    //console.log('visiting expr13:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.SUPT_TOK()) {
@@ -998,17 +998,17 @@ export class ForgeExprEvaluator
   }
 
   visitExpr14(ctx: Expr14Context): EvalResult {
-    console.log('visiting expr14:', ctx.text);
+    //console.log('visiting expr14:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.LEFT_SQUARE_TOK()) {
       const beforeBracesExpr = this.visit(ctx.expr14()!);
       const insideBracesExprs = this.visit(ctx.exprList()!);
-      console.log('beforeBracesExpr:', beforeBracesExpr);
-      console.log('insideBracesExprs:', insideBracesExprs);
+      //console.log('beforeBracesExpr:', beforeBracesExpr);
+      //console.log('insideBracesExprs:', insideBracesExprs);
 
       // check if it is a predicate that is being called
-      console.log('predicates:', this.predicates);
+      //console.log('predicates:', this.predicates);
       if (
         isSingleValue(beforeBracesExpr) &&
         isString(beforeBracesExpr) &&
@@ -1113,7 +1113,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr15(ctx: Expr15Context): EvalResult {
-    console.log('visiting expr15:', ctx.text);
+    //console.log('visiting expr15:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.DOT_TOK()) {
@@ -1122,8 +1122,8 @@ export class ForgeExprEvaluator
       }
       const beforeDotExpr = this.visit(ctx.expr15()!);
       const afterDotExpr = this.visit(ctx.expr16()!);
-      console.log('beforeExpr:', beforeDotExpr);
-      console.log('afterExpr:', afterDotExpr);
+      //console.log('beforeExpr:', beforeDotExpr);
+      //console.log('afterExpr:', afterDotExpr);
 
       if (
         isTupleArray(beforeDotExpr) &&
@@ -1184,7 +1184,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr16(ctx: Expr16Context): EvalResult {
-    console.log('visiting expr16:', ctx.text);
+    //console.log('visiting expr16:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.PRIME_TOK()) {
@@ -1200,7 +1200,7 @@ export class ForgeExprEvaluator
   }
 
   visitExpr17(ctx: Expr17Context): EvalResult {
-    console.log('visiting expr17:', ctx.text);
+    //console.log('visiting expr17:', ctx.text);
     let results: EvalResult = [];
 
     const childrenResults = this.visitChildren(ctx);
@@ -1285,7 +1285,7 @@ export class ForgeExprEvaluator
   } 
 
   visitExpr18(ctx: Expr18Context): EvalResult {
-    console.log('visiting expr18:', ctx.text);
+    //console.log('visiting expr18:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.const()) {
@@ -1387,7 +1387,7 @@ export class ForgeExprEvaluator
   }
 
   visitExprList(ctx: ExprListContext): EvalResult {
-    console.log('visiting exprList:', ctx.text);
+    //console.log('visiting exprList:', ctx.text);
     let results: EvalResult = [];
 
     if (ctx.COMMA_TOK()) {
@@ -1396,8 +1396,8 @@ export class ForgeExprEvaluator
         throw new Error('exprList with a comma must have a tail!');
       }
       const tailValues = this.visit(ctx.exprList()!);
-      console.log('headValue:', headValue);
-      console.log('tailValues:', tailValues);
+      //console.log('headValue:', headValue);
+      //console.log('tailValues:', tailValues);
 
       // this isn't necessarily correct; just trying to get something that would
       // work for things like add, subtract, predicate calls for now
@@ -1418,7 +1418,7 @@ export class ForgeExprEvaluator
   }
 
   visitName(ctx: NameContext): EvalResult {
-    console.log('visiting name:', ctx.text);
+    //console.log('visiting name:', ctx.text);
 
     // if `true` or `false`, return the corresponding value
     const identifier = ctx.IDENTIFIER_TOK().text;
@@ -1430,8 +1430,8 @@ export class ForgeExprEvaluator
       return false;
     }
 
-    console.log('need to find an identifier:', identifier);
-    // console.log(this.instanceData);
+    //console.log('need to find an identifier:', identifier);
+    // //console.log(this.instanceData);
     // temporary
     // if (identifier === 'b') {
     //   return '1';
@@ -1613,7 +1613,7 @@ export class ForgeExprEvaluator
   visitQualName(ctx: QualNameContext): EvalResult {
     // NOTE: this currently only supports Int; doesn't support other branches
     // of the qualName nonterminal
-    console.log('visiting qualName:', ctx.text);
+    //console.log('visiting qualName:', ctx.text);
 
     if (ctx.INT_TOK()) {
       const intVals = this.instanceData.types.Int.atoms.map((atom: Atom) => [Number(atom.id)]);

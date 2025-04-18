@@ -8,11 +8,11 @@ import { DatumParsed } from './types';
 import { Predicate } from './types';
 import { extractPredicates } from './predicateExtactor';
 
-type ErrorResult = {
+export type ErrorResult = {
   error: Error;
   stackTrace?: string;
 }
-type EvaluationResult = EvalResult | ErrorResult;
+export type EvaluationResult = EvalResult | ErrorResult;
 
 export class ForgeExprEvaluatorUtil {
 

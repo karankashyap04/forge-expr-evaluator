@@ -16,10 +16,10 @@ function removeCommentLines(fileContent: string): string {
 
 // extract predicates
 export function extractPredicates(fileContent: string): Predicate[] {
-  console.log('fileContent:', fileContent);
+  //console.log('fileContent:', fileContent);
   const decodedContent = decodeHTML(fileContent); // HTML encoded string -> plain string
   const cleanedContent = removeCommentLines(decodedContent);
-  console.log('cleanedContent:', cleanedContent);
+  //console.log('cleanedContent:', cleanedContent);
 
   const predicateRegex = /pred\s+(\w+)(\[[^\]]*\])?\s*\{([\s\S]*?)\}/g;
   let match;
@@ -29,7 +29,7 @@ export function extractPredicates(fileContent: string): Predicate[] {
       const name = match[1]; // Predicate name
       const args = match[2] || ''; // Arguments (optional)
       let body = match[3]; // Predicate body
-      console.log('body:', body);
+      //console.log('body:', body);
 
       // filter out occurrences of "// " from the body
       body = body.replaceAll('// ', '');
