@@ -217,5 +217,17 @@ describe("forge-expr-evaluator", () => {
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
     expect(result).toEqual("#t");
-  })
+  });
+
+  it("can evaluate chained dot joins", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "Game.next.Board1";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual([["Board0"]]);
+  });
 });
