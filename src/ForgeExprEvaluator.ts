@@ -1122,8 +1122,8 @@ export class ForgeExprEvaluator
       }
       const beforeDotExpr = this.visit(ctx.expr15()!);
       const afterDotExpr = this.visit(ctx.expr16()!);
-      console.log('beforeExpr:', beforeDotExpr);
-      console.log('afterExpr:', afterDotExpr);
+      // console.log('beforeExpr:', beforeDotExpr);
+      // console.log('afterExpr:', afterDotExpr);
 
       if (!isTupleArray(beforeDotExpr) || !isTupleArray(afterDotExpr)) {
         throw new Error('Expected the dot operator to operate on 2 sets!');
