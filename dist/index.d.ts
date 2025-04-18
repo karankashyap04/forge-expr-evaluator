@@ -4,11 +4,11 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker';
 import { EvalResult } from './ForgeExprEvaluator';
 import { DatumParsed } from './types';
 import { Predicate } from './types';
-type ErrorResult = {
+export type ErrorResult = {
     error: Error;
     stackTrace?: string;
 };
-type EvaluationResult = EvalResult | ErrorResult;
+export type EvaluationResult = EvalResult | ErrorResult;
 export declare class ForgeExprEvaluatorUtil {
     datum: DatumParsed;
     predicates: Predicate[];
@@ -21,4 +21,3 @@ export declare class ForgeExprEvaluatorUtil {
     private getPredicateParseTrees;
     evaluateExpression(forgeExpr: string, instanceIndex?: number): EvaluationResult;
 }
-export {};

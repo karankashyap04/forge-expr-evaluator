@@ -3,8 +3,8 @@ import { ForgeVisitor } from './forge-antlr/ForgeVisitor';
 import { ExprContext, Expr1Context, Expr1_5Context, Expr2Context, Expr3Context, Expr4Context, Expr4_5Context, Expr5Context, Expr6Context, Expr7Context, Expr8Context, Expr9Context, Expr10Context, Expr11Context, Expr12Context, Expr13Context, Expr14Context, Expr15Context, Expr16Context, Expr17Context, Expr18Context, ExprListContext, NameContext, PredDeclContext, BlockContext, QualNameContext, QuantDeclListContext, NameListContext, QuantDeclContext } from './forge-antlr/ForgeParser';
 import { DatumParsed } from './types';
 import { Predicate } from './types';
-type SingleValue = string | number | boolean;
-type Tuple = SingleValue[];
+export type SingleValue = string | number | boolean;
+export type Tuple = SingleValue[];
 export type EvalResult = SingleValue | Tuple[];
 /**
  * A recursive evaluator for Forge expressions.
@@ -52,4 +52,3 @@ export declare class ForgeExprEvaluator extends AbstractParseTreeVisitor<EvalRes
     visitName(ctx: NameContext): EvalResult;
     visitQualName(ctx: QualNameContext): EvalResult;
 }
-export {};

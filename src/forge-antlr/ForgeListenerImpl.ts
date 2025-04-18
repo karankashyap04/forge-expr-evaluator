@@ -112,7 +112,7 @@ function exitExpr(ctx: ExprContext) {
     const { startLine, startColumn, endLine, endColumn } = getLocations(ctx);
     const exprTree = getLocationOnlyExpr(ctx);
     
-    console.log("Parsed Expression Tree:", exprTree);
+    //console.log("Parsed Expression Tree:", exprTree);
 }
 
 

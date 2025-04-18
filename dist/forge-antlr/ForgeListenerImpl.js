@@ -17,7 +17,7 @@ function getRandomName() {
 function exitExpr(ctx) {
     const { startLine, startColumn, endLine, endColumn } = getLocations(ctx);
     const exprTree = getLocationOnlyExpr(ctx);
-    console.log("Parsed Expression Tree:", exprTree);
+    //console.log("Parsed Expression Tree:", exprTree);
 }
 function getLocations(ctx) {
     const startLine = ctx.start.line; // This is 1 based line number

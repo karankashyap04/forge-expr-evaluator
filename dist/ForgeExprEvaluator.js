@@ -102,7 +102,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     }
     // helper function
     callPredicate(predicate, evaluatedArgs) {
-        console.log('trying to call predicate:', predicate.name);
+        //console.log('trying to call predicate:', predicate.name);
         // check if the expected number of args has been provided
         const expectedArgs = predicate.args ? predicate.args.length : 0;
         const providedArgs = Array.isArray(evaluatedArgs) ? evaluatedArgs.length : 1;
@@ -127,18 +127,18 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                         : [argValue];
             }
         }
-        console.log('bindings:', bindings);
+        //console.log('bindings:', bindings);
         // add the environment for the callee onto the stack
         this.environmentStack.push(bindings);
         // get the parse tree for the predicate
         const tree = predicate.predTree;
-        console.log('tree:', tree);
+        //console.log('tree:', tree);
         if (tree === undefined) {
             throw new Error(`No parse tree found for predicate ${predicate.name}`);
         }
         // evaluate the predicate
         const result = this.visit(tree);
-        console.log('pred evaluated; result:', result);
+        //console.log('pred evaluated; result:', result);
         // remove the environment for the callee from the stack
         this.environmentStack.pop();
         return result;
@@ -168,18 +168,18 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         }
     }
     defaultResult() {
-        console.log('default result');
+        //console.log('default result');
         return [];
     }
     visitPredDecl(ctx) {
-        console.log('visiting pred');
-        console.log('ctx.block().text:', ctx.block().text);
+        //console.log('visiting pred');
+        //console.log('ctx.block().text:', ctx.block().text);
         const visitResult = this.visit(ctx.block());
         return visitResult;
     }
     visitBlock(ctx) {
-        console.log('visiting block');
-        console.log('ctx.text:', ctx.text);
+        //console.log('visiting block');
+        //console.log('ctx.text:', ctx.text);
         let result = undefined;
         for (const expr of ctx.expr()) {
             const exprResult = this.visit(expr);
@@ -195,14 +195,14 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 result = result && exprResult;
             }
         }
-        console.log('returning from block:', result);
+        //console.log('returning from block:', result);
         if (result === undefined) {
             throw new Error('Expected the block to be nonempty!');
         }
         return result;
     }
     visitExpr(ctx) {
-        console.log('visiting expr: ', ctx.text);
+        //console.log('visiting expr: ', ctx.text);
         let results = undefined;
         if (ctx.LET_TOK()) {
             results = [];
@@ -308,9 +308,9 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         }
         // TODO: fix this!
         const childrenResults = this.visitChildren(ctx);
-        console.log('childrenResults in expr:', childrenResults);
+        //console.log('childrenResults in expr:', childrenResults);
         if (results === undefined) {
-            console.log('returning childrenResults in expr:', childrenResults);
+            //console.log('returning childrenResults in expr:', childrenResults);
             return childrenResults;
         }
         if (isSingleValue(results)) {
@@ -322,11 +322,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         else {
             results = results.concat(childrenResults);
         }
-        console.log('results being returned in expr:', results);
+        //console.log('results being returned in expr:', results);
         return results;
     }
     visitExpr1(ctx) {
-        console.log('visiting expr1:', ctx.text);
+        //console.log('visiting expr1:', ctx.text);
         if (ctx.OR_TOK()) {
             if (ctx.expr1_5() === undefined || ctx.expr1_5() === undefined) {
                 throw new Error('Expected the OR operator to have 2 operands of the right type!');
@@ -339,11 +339,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return leftChildValue || rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
-        console.log('childrenResults in expr1:', childrenResults);
+        //console.log('childrenResults in expr1:', childrenResults);
         return childrenResults;
     }
     visitExpr1_5(ctx) {
-        console.log('visiting expr1_5:', ctx.text);
+        //console.log('visiting expr1_5:', ctx.text);
         if (ctx.XOR_TOK()) {
             if (ctx.expr1_5() === undefined || ctx.expr2() === undefined) {
                 throw new Error('Expected the XOR operator to have 2 operands of the right type!');
@@ -356,11 +356,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return leftChildValue !== rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
-        console.log('childrenResults in expr1_5:', childrenResults);
+        //console.log('childrenResults in expr1_5:', childrenResults);
         return childrenResults;
     }
     visitExpr2(ctx) {
-        console.log('visiting expr2:', ctx.text);
+        //console.log('visiting expr2:', ctx.text);
         if (ctx.IFF_TOK()) {
             if (ctx.expr2() === undefined || ctx.expr3() === undefined) {
                 throw new Error('Expected the IFF operator to have 2 operands of the right type!');
@@ -373,11 +373,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return leftChildValue === rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
-        console.log('childrenResults in expr2:', childrenResults);
+        //console.log('childrenResults in expr2:', childrenResults);
         return childrenResults;
     }
     visitExpr3(ctx) {
-        console.log('visiting expr3:', ctx.text);
+        //console.log('visiting expr3:', ctx.text);
         if (ctx.IMP_TOK()) {
             if (ctx.expr3() === undefined || ctx.expr4() === undefined) {
                 throw new Error('Expected the IMP operator to have 2 operands of the right type!');
@@ -391,11 +391,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return !leftChildValue || rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
-        console.log('childrenResults in expr3:', childrenResults);
+        //console.log('childrenResults in expr3:', childrenResults);
         return childrenResults;
     }
     visitExpr4(ctx) {
-        console.log('visiting expr4:', ctx.text);
+        //console.log('visiting expr4:', ctx.text);
         if (ctx.AND_TOK()) {
             if (ctx.expr4() === undefined || ctx.expr4_5() === undefined) {
                 throw new Error('Expected the AND operator to have 2 operands of the right type!');
@@ -408,11 +408,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return leftChildValue && rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
-        console.log('childrenResults in expr4:', childrenResults);
+        //console.log('childrenResults in expr4:', childrenResults);
         return childrenResults;
     }
     visitExpr4_5(ctx) {
-        console.log('visiting expr4_5:', ctx.text);
+        //console.log('visiting expr4_5:', ctx.text);
         let results = [];
         if (ctx.UNTIL_TOK()) {
             results.push(['**UNIMPLEMENTED** Temporal Operator (`until`)']);
@@ -455,11 +455,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return results;
         }
         const childrenResults = this.visitChildren(ctx);
-        console.log('childrenResults in expr4_5:', childrenResults);
+        //console.log('childrenResults in expr4_5:', childrenResults);
         return childrenResults;
     }
     visitExpr5(ctx) {
-        console.log('visiting expr5:', ctx.text);
+        //console.log('visiting expr5:', ctx.text);
         let results = [];
         if (ctx.expr6()) {
             return this.visit(ctx.expr6());
@@ -468,7 +468,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             throw new Error('Expected the temporal operator to have 1 operand!');
         }
         const childrenResults = this.visit(ctx.expr5());
-        console.log('childrenResults in expr5:', childrenResults);
+        //console.log('childrenResults in expr5:', childrenResults);
         if (ctx.NEG_TOK()) {
             if (!isBoolean(childrenResults)) {
                 throw new Error('Expected the negation operator to have a boolean operand!');
@@ -517,11 +517,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             //       just returning results as is right now
             return results;
         }
-        console.log('returning from the bottom:', childrenResults);
+        //console.log('returning from the bottom:', childrenResults);
         return childrenResults;
     }
     visitExpr6(ctx) {
-        console.log('visiting expr6:', ctx.text);
+        //console.log('visiting expr6:', ctx.text);
         let results = [];
         let toNegate = false;
         let foundValue = false;
@@ -535,8 +535,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             }
             const leftChildValue = this.visit(ctx.expr6());
             const rightChildValue = this.visit(ctx.expr7());
-            console.log('left child value:', leftChildValue);
-            console.log('right child value:', rightChildValue);
+            //console.log('left child value:', leftChildValue);
+            //console.log('right child value:', rightChildValue);
             switch (ctx.compareOp()?.text) {
                 case '=':
                     // results.push(['**UNIMPLEMENTED** Equality Check (`=`)']);
@@ -616,16 +616,16 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return !results;
         }
         if (foundValue) {
-            console.log('found value; returning:', results);
+            //console.log('found value; returning:', results);
             return results;
         }
         return this.visitChildren(ctx);
     }
     visitExpr7(ctx) {
-        console.log('visiting expr7:', ctx.text);
+        //console.log('visiting expr7:', ctx.text);
         let results = [];
         const childrenResults = this.visit(ctx.expr8());
-        console.log('childrenResults:', childrenResults);
+        //console.log('childrenResults:', childrenResults);
         if (ctx.SET_TOK()) {
             throw new Error('**NOT IMPLEMENTING FOR NOW** Set (`set`)');
         }
@@ -647,7 +647,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return childrenResults;
     }
     visitExpr8(ctx) {
-        console.log('visiting expr8:', ctx.text);
+        //console.log('visiting expr8:', ctx.text);
         if (ctx.PLUS_TOK()) {
             const leftChildValue = this.visit(ctx.expr8());
             const rightChildValue = this.visit(ctx.expr10());
@@ -699,7 +699,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 if (leftChildValue === rightChildValue) {
                     return [];
                 }
-                console.log('returning leftChildValue:', leftChildValue);
+                //console.log('returning leftChildValue:', leftChildValue);
                 return leftChildValue;
             }
             else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
@@ -738,9 +738,9 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExpr9(ctx) {
-        console.log('visiting expr9:', ctx.text);
+        //console.log('visiting expr9:', ctx.text);
         const childrenResults = this.visitChildren(ctx);
-        console.log('childrenResults in expr9:', childrenResults);
+        //console.log('childrenResults in expr9:', childrenResults);
         if (ctx.CARD_TOK()) {
             if (!isTupleArray(childrenResults)) {
                 throw new Error('The cardinal operator must be applied to a set of tuples!');
@@ -750,7 +750,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return childrenResults;
     }
     visitExpr10(ctx) {
-        console.log('visiting expr10:', ctx.text);
+        //console.log('visiting expr10:', ctx.text);
         let results = [];
         if (ctx.PPLUS_TOK()) {
             if (ctx.expr10() === undefined || ctx.expr11() === undefined) {
@@ -763,7 +763,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExpr11(ctx) {
-        console.log('visiting expr11:', ctx.text);
+        //console.log('visiting expr11:', ctx.text);
         if (ctx.AMP_TOK()) {
             if (ctx.expr11() === undefined || ctx.expr12() === undefined) {
                 throw new Error('Expected the amp operator to have 2 operands of the right type!');
@@ -807,7 +807,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExpr12(ctx) {
-        console.log('visiting expr12:', ctx.text);
+        //console.log('visiting expr12:', ctx.text);
         if (ctx.arrowOp()) {
             if (ctx.expr12() === undefined || ctx.expr13() === undefined) {
                 throw new Error('Expected the arrow operator to have 2 operands of the right type!');
@@ -833,7 +833,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExpr13(ctx) {
-        console.log('visiting expr13:', ctx.text);
+        //console.log('visiting expr13:', ctx.text);
         let results = [];
         if (ctx.SUPT_TOK()) {
             if (ctx.expr13() === undefined || ctx.expr14() === undefined) {
@@ -854,15 +854,15 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExpr14(ctx) {
-        console.log('visiting expr14:', ctx.text);
+        //console.log('visiting expr14:', ctx.text);
         let results = [];
         if (ctx.LEFT_SQUARE_TOK()) {
             const beforeBracesExpr = this.visit(ctx.expr14());
             const insideBracesExprs = this.visit(ctx.exprList());
-            console.log('beforeBracesExpr:', beforeBracesExpr);
-            console.log('insideBracesExprs:', insideBracesExprs);
+            //console.log('beforeBracesExpr:', beforeBracesExpr);
+            //console.log('insideBracesExprs:', insideBracesExprs);
             // check if it is a predicate that is being called
-            console.log('predicates:', this.predicates);
+            //console.log('predicates:', this.predicates);
             if (isSingleValue(beforeBracesExpr) &&
                 isString(beforeBracesExpr) &&
                 this.isPredicateName(beforeBracesExpr)) {
@@ -964,7 +964,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExpr15(ctx) {
-        console.log('visiting expr15:', ctx.text);
+        //console.log('visiting expr15:', ctx.text);
         let results = [];
         if (ctx.DOT_TOK()) {
             if (ctx.expr15() === undefined || ctx.expr16() === undefined) {
@@ -972,8 +972,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             }
             const beforeDotExpr = this.visit(ctx.expr15());
             const afterDotExpr = this.visit(ctx.expr16());
-            console.log('beforeExpr:', beforeDotExpr);
-            console.log('afterExpr:', afterDotExpr);
+            //console.log('beforeExpr:', beforeDotExpr);
+            //console.log('afterExpr:', afterDotExpr);
             if (isTupleArray(beforeDotExpr) &&
                 beforeDotExpr.length === 1 &&
                 beforeDotExpr[0].length === 1) {
@@ -1022,7 +1022,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExpr16(ctx) {
-        console.log('visiting expr16:', ctx.text);
+        //console.log('visiting expr16:', ctx.text);
         let results = [];
         if (ctx.PRIME_TOK()) {
             const leftChildValue = this.visit(ctx.expr16());
@@ -1034,7 +1034,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExpr17(ctx) {
-        console.log('visiting expr17:', ctx.text);
+        //console.log('visiting expr17:', ctx.text);
         let results = [];
         const childrenResults = this.visitChildren(ctx);
         if (ctx.TILDE_TOK()) {
@@ -1114,7 +1114,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         }
     }
     visitExpr18(ctx) {
-        console.log('visiting expr18:', ctx.text);
+        //console.log('visiting expr18:', ctx.text);
         let results = [];
         if (ctx.const()) {
             const constant = ctx.const();
@@ -1204,7 +1204,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitExprList(ctx) {
-        console.log('visiting exprList:', ctx.text);
+        //console.log('visiting exprList:', ctx.text);
         let results = [];
         if (ctx.COMMA_TOK()) {
             const headValue = this.visit(ctx.expr());
@@ -1212,8 +1212,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 throw new Error('exprList with a comma must have a tail!');
             }
             const tailValues = this.visit(ctx.exprList());
-            console.log('headValue:', headValue);
-            console.log('tailValues:', tailValues);
+            //console.log('headValue:', headValue);
+            //console.log('tailValues:', tailValues);
             // this isn't necessarily correct; just trying to get something that would
             // work for things like add, subtract, predicate calls for now
             if (isSingleValue(headValue)) {
@@ -1233,7 +1233,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitName(ctx) {
-        console.log('visiting name:', ctx.text);
+        //console.log('visiting name:', ctx.text);
         // if `true` or `false`, return the corresponding value
         const identifier = ctx.IDENTIFIER_TOK().text;
         if (identifier === 'true') {
@@ -1242,8 +1242,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         if (identifier === 'false') {
             return false;
         }
-        console.log('need to find an identifier:', identifier);
-        // console.log(this.instanceData);
+        //console.log('need to find an identifier:', identifier);
+        // //console.log(this.instanceData);
         // temporary
         // if (identifier === 'b') {
         //   return '1';
@@ -1391,7 +1391,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
     visitQualName(ctx) {
         // NOTE: this currently only supports Int; doesn't support other branches
         // of the qualName nonterminal
-        console.log('visiting qualName:', ctx.text);
+        //console.log('visiting qualName:', ctx.text);
         if (ctx.INT_TOK()) {
             const intVals = this.instanceData.types.Int.atoms.map((atom) => [Number(atom.id)]);
             return intVals;
