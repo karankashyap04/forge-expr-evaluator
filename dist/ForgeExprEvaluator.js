@@ -941,14 +941,31 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     results = afterDotExpr
                         .filter((tuple) => tuple[0] === joinValue)
                         .map((tuple) => tuple.slice(1));
+                    if (results.some((tuple) => tuple.length === 0)) {
+                        throw new Error('Join would create a relation of arity 0');
+                    }
                     return results;
                 }
                 else {
-                    throw new Error('Expected the expression after the dot to be a tuple array (relation)');
+                    throw new Error('One of the relations being joined must have arity 1');
                 }
             }
-            else {
-                throw new Error('Expected the expression before the dot to be a single value (atom)');
+            else if (isTupleArray(afterDotExpr) &&
+                afterDotExpr.length === 1 &&
+                afterDotExpr[0].length === 1) {
+                const joinValue = afterDotExpr[0][0];
+                if (isTupleArray(beforeDotExpr)) {
+                    results = beforeDotExpr
+                        .filter((tuple) => tuple[tuple.length - 1] === joinValue)
+                        .map((tuple) => tuple.slice(0, tuple.length - 1));
+                    if (results.some((tuple) => tuple.length === 0)) {
+                        throw new Error('Join would create a relation of arity 0');
+                    }
+                    return results;
+                }
+                else {
+                    throw new Error('One of the relations being joined must have arity 1');
+                }
             }
         }
         if (ctx.LEFT_SQUARE_TOK()) {
