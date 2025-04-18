@@ -46,7 +46,10 @@ type SingleValue = string; // maybe this can be a number too?
 export type Tuple = SingleValue[];
 type EvalResult = SingleValue | Tuple[];
 
-type Environment = Record<string, EvalResult>;
+type Environment = {
+  env: Record<string, EvalResult>;
+  type: "quantDecl" | "predArgs";
+}
 
 ///// HELPER FUNCTIONS /////
 function isSingleValue(value: EvalResult): value is SingleValue {
@@ -117,6 +120,13 @@ function getCombinations(arrays: Tuple[][]): Tuple[] {
   return cartesianProduct(valueSets);
 }
 
+///// Forge builtin functions we support /////
+
+// this is a list of forge builtin functions we currently support; add to this
+// list as we support more
+const SUPPORTED_BUILTINS = ['add', 'subtract'];
+
+
 /**
  * A recursive evaluator for Forge expressions.
  * This visitor walks the parse tree and prints the type of operation encountered.
@@ -130,7 +140,6 @@ export class ForgeExprEvaluator
   private instanceData: InstanceData;
   private predicates: Predicate[];
   private environmentStack: Environment[];
-  private quantDeclEnvironmentStack: Environment[];
 
   constructor(datum: DatumParsed, instanceIndex: number, predicates: Predicate[]) {
     super();
@@ -139,7 +148,6 @@ export class ForgeExprEvaluator
     this.instanceData = this.datum.parsed.instances[this.instanceIndex];
     this.predicates = predicates;
     this.environmentStack = [];
-    this.quantDeclEnvironmentStack = [];
   }
 
   // helper function
@@ -171,14 +179,17 @@ export class ForgeExprEvaluator
 
     // make bindings for the args
     const argNames = predicate.args?.map((arg) => arg.split(':')[0]); // remove type info
-    const bindings: Environment = {};
+    const bindings: Environment = {
+      env: {},
+      type: 'predArgs'
+    };
     if (argNames) {
       for (let i = 0; i < argNames.length; i++) {
         let argValue = Array.isArray(evaluatedArgs) ? evaluatedArgs[i] : evaluatedArgs;
         if (Array.isArray(argValue) && argValue.length === 1) {
           argValue = argValue[0]; // if it's a single value in an array, just use the value
         }
-        bindings[argNames[i]] =
+        bindings.env[argNames[i]] =
           typeof argValue === 'string' ? argValue : [argValue];
       }
     }
@@ -267,10 +278,100 @@ export class ForgeExprEvaluator
       throw new Error('**NOT IMPLEMENTING FOR NOW** Bind Expression');
     }
     if (ctx.quant()) {
-      results = [];
-      results.push([
-        '**UNIMPLEMENTED** Quantified Expression (`all`, `some`, `no`, etc.)'
-      ]);
+      // results = [];
+      // results.push([
+      //   '**UNIMPLEMENTED** Quantified Expression (`all`, `some`, `no`, etc.)'
+      // ]);
+
+      // TODO: add support for disj here
+      if (ctx.quantDeclList() === undefined) {
+        throw new Error('Expected the quantifier to have a quantDeclList!');
+      }
+      const varQuantifiedSets = this.getQuantDeclListValues(ctx.quantDeclList()!);
+
+      const isDisjoint = ctx.DISJ_TOK() !== undefined;
+
+      // NOTE: this doesn't support the situation in which blockOrBar is a block
+      // yet
+      const blockOrBar = ctx.blockOrBar();
+      if (blockOrBar === undefined) {
+        throw new Error('expected to quantify over something!');
+      }
+      if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
+        throw new Error('Expected the quantifier to have a bar followed by an expr!');
+      }
+      const barExpr = blockOrBar.expr()!;
+      const varNames: string[] = [];
+      const quantifiedSets: Tuple[][] = [];
+      for (const varName in varQuantifiedSets) {
+        varNames.push(varName);
+        quantifiedSets.push(varQuantifiedSets[varName]);
+      }
+      const product: Tuple[] = getCombinations(quantifiedSets);
+
+      const result: Tuple[] = [];
+
+      let foundTrue = false;
+      let foundFalse = false;
+
+      for (let i = 0; i < product.length; i++) {
+        const tuple = product[i];
+        if (isDisjoint) {
+          // the elements of the tuple must be different
+          let tupleDisjoint = true;
+          const seen = new Set();
+          for (const val of tuple) {
+            if (seen.has(val)) {
+              tupleDisjoint = false;
+              break;
+            }
+            seen.add(val);
+          }
+          if (!tupleDisjoint) {
+            continue;
+          }
+        }
+        const quantDeclEnv: Environment = {
+          env: {},
+          type: 'quantDecl'
+        };
+        for (let j = 0; j < varNames.length; j++) {
+          const varName = varNames[j];
+          const varValue = tuple[j];
+          quantDeclEnv.env[varName] = varValue;
+        }
+
+        this.environmentStack.push(quantDeclEnv);
+
+        // now, we want to evaluate the barExpr
+        const barExprValue = this.visit(barExpr);
+        if (getBooleanValue(barExprValue)) { // will error if not boolean val, which we want
+          result.push(tuple);
+          foundTrue = true;
+        } else {
+          foundFalse = true;
+        }
+
+        this.environmentStack.pop();
+      }
+
+      if (ctx.quant()!.ALL_TOK()) {
+        return !foundFalse ? TRUE_LITERAL : FALSE_LITERAL;
+      } else if (ctx.quant()!.NO_TOK()) {
+        return !foundTrue ? TRUE_LITERAL : FALSE_LITERAL;
+      } else if (ctx.quant()!.mult()) {
+        const multExpr = ctx.quant()!.mult()!;
+        if (multExpr.LONE_TOK()) {
+          return result.length <= 1 ? TRUE_LITERAL : FALSE_LITERAL;
+        } else if (multExpr.SOME_TOK()) {
+          return foundTrue ? TRUE_LITERAL : FALSE_LITERAL;
+        } else if (multExpr.ONE_TOK()) {
+          result.length === 1 ? TRUE_LITERAL : FALSE_LITERAL;
+        } else if (multExpr.TWO_TOK()) {
+          throw new Error('**NOT IMPLEMENTING FOR NOW** Two (`two`)');
+        }
+      }
+      // TODO: don't have support for SUM_TOK yet
     }
 
     // TODO: fix this!
@@ -1171,14 +1272,17 @@ export class ForgeExprEvaluator
 
       for (let i = 0; i < product.length; i++) {
         const tuple = product[i];
-        const quantDeclEnv: Environment = {};
+        const quantDeclEnv: Environment = {
+          env: {},
+          type: 'quantDecl',
+        };
         for (let j = 0; j < varNames.length; j++) {
           const varName = varNames[j];
           const varValue = tuple[j];
-          quantDeclEnv[varName] = varValue;
+          quantDeclEnv.env[varName] = varValue;
         }
 
-        this.quantDeclEnvironmentStack.push(quantDeclEnv);
+        this.environmentStack.push(quantDeclEnv);
 
         // now, we want to evaluate the barExpr
         const barExprValue = this.visit(barExpr);
@@ -1186,7 +1290,7 @@ export class ForgeExprEvaluator
           result.push(tuple);
         }
 
-        this.quantDeclEnvironmentStack.pop();
+        this.environmentStack.pop();
       }
 
       return result;
@@ -1267,26 +1371,41 @@ export class ForgeExprEvaluator
       }
     }
 
-    // if this is a var that has a value due to a quantDecl, get the value for
-    // the current combination of the space being searched
-    for (let i = this.quantDeclEnvironmentStack.length - 1; i >= 0; i--) {
-      const quantDeclEnv = this.quantDeclEnvironmentStack[i];
-      if (quantDeclEnv[identifier] !== undefined) {
-        return quantDeclEnv[identifier];
+    // need to look through the environment. we need to go through the environment
+    // backwards from the latest frame, and we can keep going to the previous
+    // frame until we encounter a predArgs frame. If we encounter a predArg
+    // frame we can't go further back
+    for (let i = this.environmentStack.length - 1; i >= 0; i--) {
+      const currEnv = this.environmentStack[i];
+      if (currEnv.env[identifier] !== undefined) {
+        return currEnv.env[identifier];
+      }
+
+      if (currEnv.type === 'predArgs') {
+        break; // can't go further back
       }
     }
 
-    // if this is an arg to the pred being evaluated, return it
-    const latestEnvironment =
-      this.environmentStack.length > 0
-        ? this.environmentStack[this.environmentStack.length - 1]
-        : undefined;
-    if (
-      latestEnvironment !== undefined &&
-      latestEnvironment[identifier] !== undefined
-    ) {
-      return latestEnvironment[identifier];
-    }
+    // // if this is a var that has a value due to a quantDecl, get the value for
+    // // the current combination of the space being searched
+    // for (let i = this.quantDeclEnvironmentStack.length - 1; i >= 0; i--) {
+    //   const quantDeclEnv = this.quantDeclEnvironmentStack[i];
+    //   if (quantDeclEnv[identifier] !== undefined) {
+    //     return quantDeclEnv[identifier];
+    //   }
+    // }
+
+    // // if this is an arg to the pred being evaluated, return it
+    // const latestEnvironment =
+    //   this.environmentStack.length > 0
+    //     ? this.environmentStack[this.environmentStack.length - 1]
+    //     : undefined;
+    // if (
+    //   latestEnvironment !== undefined &&
+    //   latestEnvironment[identifier] !== undefined
+    // ) {
+    //   return latestEnvironment[identifier];
+    // }
 
     let result: EvalResult | undefined = undefined;
 
@@ -1363,7 +1482,11 @@ export class ForgeExprEvaluator
       return result;
     }
 
-    return identifier;
+    // return identifier;
+    if (this.isPredicateName(identifier) || SUPPORTED_BUILTINS.includes(identifier)) {
+      return identifier;
+    }
+    throw new Error(`bad name ${identifier} referenced!`);
   }
 
   visitQualName(ctx: QualNameContext): EvalResult {

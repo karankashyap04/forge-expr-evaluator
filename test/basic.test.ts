@@ -82,7 +82,6 @@ describe("forge-expr-evaluator", () => {
     ]);
   });
 
-
   it("can evaluate a set comprehension", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);
@@ -102,7 +101,7 @@ describe("forge-expr-evaluator", () => {
     ]);
   });
 
-  skip("can evaluate cardinality on the result of a set comprehension", () => {
+  it("can evaluate cardinality on the result of a set comprehension", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);
 
@@ -138,7 +137,6 @@ describe("forge-expr-evaluator", () => {
     expect(result).toEqual([["X0", "O0", "X0"]]);
   });
 
-
   it("can evaluate basic inter and intra-sig relations", () => {
     const datum: DatumParsed = interSigDatum;
     const sourceCode = getCodeFromDatum(datum);
@@ -166,4 +164,58 @@ describe("forge-expr-evaluator", () => {
 
     expect(result).toEqual([["A0"]]);
   });
+
+  it("can quantify in a truthy way", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "some i : Int | i < 4";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual("#t");
+  });
+
+  it("can quantify in a truthy way if there is a block after the bar", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "some i : Int | { i < 4 \n i > 2}";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual("#t");
+  });
+
+  it("can perform truthy quantifications when specifying disjoint", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "all disj i, j : Int | { not i = j }";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual("#t");
+
+    const expr2 = "some disj i, j : Int | { i = j }";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+    expect(result2).toEqual("#f");
+  });
+
+  it("can avoid variable shadowing issues across predicate args and quantified vars", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    // quantified x is shadowed by the x which is the argument to argPred1
+    // if shadowing doesn't work properly, this will return #f
+    const expr = "all x : Int | argPred1[3, 3]";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual("#t");
+  })
 });
