@@ -1,0 +1,261 @@
+{
+  "buttons": [
+    {
+      "mouseover": "(Get next instance)",
+      "onClick": "next",
+      "text": "Next"
+    }
+  ],
+  "data": "<alloy builddate=\"Friday, April 18th, 2025\">\n<instance bitwidth=\"4\" maxseq=\"-1\" command=\"temporary-name_gridCells_1\" filename=\"/Users/karankashyap/Documents/Brown University/forge-research/forge-expr-evaluator/test/examples/grid-cell/gridCells.frg\" version=\"4.1\"  >\n\n<sig label=\"seq/Int\" ID=\"0\" parentID=\"1\" builtin=\"yes\">\n</sig>\n\n<sig label=\"Int\" ID=\"1\" parentID=\"2\" builtin=\"yes\">\n\n</sig>\n\n<sig label=\"univ\" ID=\"2\" builtin=\"yes\">\n</sig>\n\n<field label=\"no-field-guard\" ID=\"3\" parentID=\"2\">\n<types> <type ID=\"2\"/><type ID=\"2\"/> </types>\n</field>\n\n<sig label=\"Cell\" ID=\"4\" parentID=\"2\">\n<atom label=\"Cell0\"/><atom label=\"Cell1\"/><atom label=\"Cell2\"/><atom label=\"Cell3\"/><atom label=\"Cell4\"/><atom label=\"Cell5\"/><atom label=\"Cell6\"/><atom label=\"Cell7\"/><atom label=\"Cell8\"/>\n</sig>\n\n<sig label=\"Grid\" ID=\"5\" parentID=\"2\">\n<atom label=\"Grid0\"/>\n</sig>\n\n<field label=\"cells\" ID=\"6\" parentID=\"5\">\n<tuple><atom label=\"Grid0\"/><atom label=\"0\"/><atom label=\"0\"/><atom label=\"Cell8\"/></tuple>\n<tuple><atom label=\"Grid0\"/><atom label=\"0\"/><atom label=\"1\"/><atom label=\"Cell7\"/></tuple>\n<tuple><atom label=\"Grid0\"/><atom label=\"0\"/><atom label=\"2\"/><atom label=\"Cell6\"/></tuple>\n<tuple><atom label=\"Grid0\"/><atom label=\"1\"/><atom label=\"0\"/><atom label=\"Cell5\"/></tuple>\n<tuple><atom label=\"Grid0\"/><atom label=\"1\"/><atom label=\"1\"/><atom label=\"Cell4\"/></tuple>\n<tuple><atom label=\"Grid0\"/><atom label=\"1\"/><atom label=\"2\"/><atom label=\"Cell3\"/></tuple>\n<tuple><atom label=\"Grid0\"/><atom label=\"2\"/><atom label=\"0\"/><atom label=\"Cell2\"/></tuple>\n<tuple><atom label=\"Grid0\"/><atom label=\"2\"/><atom label=\"1\"/><atom label=\"Cell1\"/></tuple>\n<tuple><atom label=\"Grid0\"/><atom label=\"2\"/><atom label=\"2\"/><atom label=\"Cell0\"/></tuple>\n<types><type ID=\"5\"/><type ID=\"1\"/><type ID=\"1\"/><type ID=\"4\"/></types>\n\n</field>\n\n\n</instance>\n\n<source filename=\"/Users/karankashyap/Documents/Brown University/forge-research/forge-expr-evaluator/test/examples/grid-cell/gridCells.frg\" content=\"#lang forge\r&#xA;\r&#xA;sig Cell {}\r&#xA;\r&#xA;one sig Grid {\r&#xA;    cells : set Int-&amp;gt;Int-&amp;gt;Cell\r&#xA;}\r&#xA;\r&#xA;pred wellformed {\r&#xA;\r&#xA;    all i, j : Int | {\r&#xA;        some (Grid.cells[i][j]) iff (i &amp;gt;= 0 and i &amp;lt; 3 and j &amp;gt;= 0 and j &amp;lt; 3)\r&#xA;\r&#xA;    }\r&#xA;\r&#xA;\r&#xA;    // Each cell slot must have exactly one unique cell\r&#xA;    all i, j : Int | \r&#xA;        (i &amp;gt;= 0 and i &amp;lt; 3 and j &amp;gt;= 0 and j &amp;lt; 3) implies \r&#xA;        (one c : Cell | Grid.cells[i][j] = c)\r&#xA;\r&#xA;    // No two different slots share the same cell\r&#xA;    all i1, j1, i2, j2 : Int | \r&#xA;        (i1 &amp;gt;= 0 and i1 &amp;lt; 3 and j1 &amp;gt;= 0 and j1 &amp;lt; 3 and \r&#xA;         i2 &amp;gt;= 0 and i2 &amp;lt; 3 and j2 &amp;gt;= 0 and j2 &amp;lt; 3 and \r&#xA;         (i1 != i2 or j1 != j2)) implies \r&#xA;        (Grid.cells[i1][j1] != Grid.cells[i2][j2])\r&#xA;}\r&#xA;\r&#xA;fun row[c : Cell] : Int {\r&#xA;    // Get the row index of the cell\r&#xA;    { i : Int | \r&#xA;        some j : Int | Grid.cells[i][j] = c\r&#xA;    }\r&#xA;}\r&#xA;\r&#xA;run {wellformed} for exactly 9 Cell\r&#xA;\"></source>\n</alloy>",
+  "evaluator": true,
+  "format": "alloy",
+  "generatorName": "temporary-name_gridCells_1",
+  "id": "1",
+  "parsed": {
+    "instances": [
+      {
+        "types": {
+          "seq/Int": {
+            "_": "type",
+            "id": "seq/Int",
+            "types": ["seq/Int", "Int"],
+            "atoms": [],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "Int": {
+            "_": "type",
+            "id": "Int",
+            "types": ["Int"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "-8",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-7",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-6",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-5",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-4",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-3",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-2",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "-1",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "0",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "1",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "2",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "3",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "4",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "5",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "6",
+                "type": "Int"
+              },
+              {
+                "_": "atom",
+                "id": "7",
+                "type": "Int"
+              }
+            ],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "univ": {
+            "_": "type",
+            "id": "univ",
+            "types": [],
+            "atoms": [],
+            "meta": {
+              "builtin": true
+            }
+          },
+          "Cell": {
+            "_": "type",
+            "id": "Cell",
+            "types": ["Cell"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "Cell0",
+                "type": "Cell"
+              },
+              {
+                "_": "atom",
+                "id": "Cell1",
+                "type": "Cell"
+              },
+              {
+                "_": "atom",
+                "id": "Cell2",
+                "type": "Cell"
+              },
+              {
+                "_": "atom",
+                "id": "Cell3",
+                "type": "Cell"
+              },
+              {
+                "_": "atom",
+                "id": "Cell4",
+                "type": "Cell"
+              },
+              {
+                "_": "atom",
+                "id": "Cell5",
+                "type": "Cell"
+              },
+              {
+                "_": "atom",
+                "id": "Cell6",
+                "type": "Cell"
+              },
+              {
+                "_": "atom",
+                "id": "Cell7",
+                "type": "Cell"
+              },
+              {
+                "_": "atom",
+                "id": "Cell8",
+                "type": "Cell"
+              }
+            ]
+          },
+          "Grid": {
+            "_": "type",
+            "id": "Grid",
+            "types": ["Grid"],
+            "atoms": [
+              {
+                "_": "atom",
+                "id": "Grid0",
+                "type": "Grid"
+              }
+            ]
+          }
+        },
+        "relations": {
+          "univ<:no-field-guard": {
+            "_": "relation",
+            "id": "univ<:no-field-guard",
+            "name": "no-field-guard",
+            "types": ["univ", "univ"],
+            "tuples": []
+          },
+          "Grid<:cells": {
+            "_": "relation",
+            "id": "Grid<:cells",
+            "name": "cells",
+            "types": ["Grid", "Int", "Int", "Cell"],
+            "tuples": [
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "0", "0", "Cell8"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "0", "1", "Cell7"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "0", "2", "Cell6"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "1", "0", "Cell5"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "1", "1", "Cell4"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "1", "2", "Cell3"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "2", "0", "Cell2"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "2", "1", "Cell1"]
+              },
+              {
+                "_": "tuple",
+                "types": ["Grid", "Int", "Int", "Cell"],
+                "atoms": ["Grid0", "2", "2", "Cell0"]
+              }
+            ]
+          }
+        },
+        "skolems": {}
+      }
+    ],
+    "bitwidth": 4,
+    "command": "temporary-name_gridCells_1",
+    "maxSeq": -1,
+    "visualizerConfig": {}
+  }
+}

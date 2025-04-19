@@ -2,6 +2,7 @@ import { ForgeExprEvaluatorUtil } from "../src";
 import { DatumParsed } from "../src/types";
 import tttDatum from "./examples/ttt-basic/datum.json";
 import interSigDatum from "./examples/inter-sig/datum.json";
+import gridCellDatum from "./examples/grid-cell/datum.json";
 
 // helper function to get module source code from datum
 function getCodeFromDatum(datum: DatumParsed): string {
@@ -261,4 +262,44 @@ describe("forge-expr-evaluator", () => {
 
     expect(result).toEqual(1);
   });
+
+  // it("can evaluate a complex set comprehension", () => {
+  //   const datum: DatumParsed = gridCellDatum;
+  //   const sourceCode = getCodeFromDatum(datum);
+
+  //   const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+  //   const expr = "{ c1, c2 : Cell | some i,j,k,m : Int | (Grid->i->j->c1 in cells) and (Grid->k->m->c2 in cells) and (i < k) }";
+  //   const instanceIdx = 0;
+  //   const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+  //   expect(result).toEqual([
+  //     ["Cell3", "Cell0"],
+  //     ["Cell3", "Cell1"],
+  //     ["Cell3", "Cell2"],
+  //     ["Cell4", "Cell0"],
+  //     ["Cell4", "Cell1"],
+  //     ["Cell4", "Cell2"],
+  //     ["Cell5", "Cell0"],
+  //     ["Cell5", "Cell1"],
+  //     ["Cell5", "Cell2"],
+  //     ["Cell6", "Cell0"],
+  //     ["Cell6", "Cell1"],
+  //     ["Cell6", "Cell2"],
+  //     ["Cell6", "Cell3"],
+  //     ["Cell6", "Cell4"],
+  //     ["Cell6", "Cell5"],
+  //     ["Cell7", "Cell0"],
+  //     ["Cell7", "Cell1"],
+  //     ["Cell7", "Cell2"],
+  //     ["Cell7", "Cell3"],
+  //     ["Cell7", "Cell4"],
+  //     ["Cell7", "Cell5"],
+  //     ["Cell8", "Cell0"],
+  //     ["Cell8", "Cell1"],
+  //     ["Cell8", "Cell2"],
+  //     ["Cell8", "Cell3"],
+  //     ["Cell8", "Cell4"],
+  //     ["Cell8", "Cell5"]
+  //   ]);
+  // });
 });
