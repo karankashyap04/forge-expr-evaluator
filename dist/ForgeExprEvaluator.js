@@ -539,15 +539,31 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             //console.log('right child value:', rightChildValue);
             switch (ctx.compareOp()?.text) {
                 case '=':
-                    // results.push(['**UNIMPLEMENTED** Equality Check (`=`)']);
-                    // TODO: this equality implementation DOES NOT MATCH FORGE RIGHT NOW!!
-                    // THIS IS JUST A TEMPORARY JANKY THING TO TEST OUT SOME VIZ STUFF THAT RELIED ON EQUALITY
                     if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
                         results = leftChildValue === rightChildValue;
                     }
+                    else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
+                        if (rightChildValue.length === 1 && rightChildValue[0].length === 1) {
+                            results = leftChildValue === rightChildValue[0][0];
+                        }
+                        else {
+                            results = false;
+                        }
+                    }
+                    else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
+                        if (leftChildValue.length === 1 && leftChildValue[0].length === 1) {
+                            results = leftChildValue[0][0] === rightChildValue;
+                        }
+                        else {
+                            results = false;
+                        }
+                    }
+                    else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
+                        results = areTupleArraysEqual(leftChildValue, rightChildValue);
+                    }
                     else {
-                        results =
-                            JSON.stringify(leftChildValue) === JSON.stringify(rightChildValue);
+                        // NOTE: we should never actually get here
+                        throw new Error('unexpected error: equality operand is not a well defined forge value!');
                     }
                     break;
                 case '<':
@@ -974,12 +990,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const afterDotExpr = this.visit(ctx.expr16());
             // console.log('beforeExpr:', beforeDotExpr);
             // console.log('afterExpr:', afterDotExpr);
-            if (!isTupleArray(beforeDotExpr) || !isTupleArray(afterDotExpr)) {
-                throw new Error('Expected the dot operator to operate on 2 sets!');
-            }
+            const leftExpr = isSingleValue(beforeDotExpr) ? [[beforeDotExpr]] : beforeDotExpr;
+            const rightExpr = isSingleValue(afterDotExpr) ? [[afterDotExpr]] : afterDotExpr;
             const result = [];
-            beforeDotExpr.forEach((leftTuple) => {
-                afterDotExpr.forEach((rightTuple) => {
+            leftExpr.forEach((leftTuple) => {
+                rightExpr.forEach((rightTuple) => {
                     if (leftTuple[leftTuple.length - 1] === rightTuple[0]) {
                         result.push([...leftTuple.slice(0, leftTuple.length - 1), ...rightTuple.slice(1)]);
                     }

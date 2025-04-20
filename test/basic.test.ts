@@ -240,14 +240,34 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    console.log('result:', result);
-
     expect(result).toEqual([
       ["Board0", "Board2"],
       ["Board1", "Board3"],
       ["Board2", "Board4"],
       ["Board3", "Board5"],
       ["Board4", "Board6"],
+    ]);
+  });
+
+  it("can evaluate a dot join with an implicit single value -> singleton set conversion", () => {
+    const datum: DatumParsed = gridCellDatum;
+    const sourceCode = getCodeFromDatum(datum);
+
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "{c : Cell, i : Int | (Int.(Grid.cells).c = i)}";
+    const instanceIdx = 0;
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual([
+      ["Cell0", 2],
+      ["Cell1", 1],
+      ["Cell2", 0],
+      ["Cell3", 2],
+      ["Cell4", 1],
+      ["Cell5", 0],
+      ["Cell6", 2],
+      ["Cell7", 1],
+      ["Cell8", 0],
     ]);
   });
 
