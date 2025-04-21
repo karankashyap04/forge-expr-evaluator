@@ -115,19 +115,26 @@ function deduplicateTuples(tuples: Tuple[]): Tuple[] {
   return result;
 }
 
-function getCombinations(arrays: Tuple[][]): Tuple[] {
-  // first, turn each string[][] into a string[] by flattening
-  const valueSets: SingleValue[][] = arrays.map(tuple => tuple.flat());
-
-  // now, recursively compute the cartesian product
-  function cartesianProduct(arrays: SingleValue[][]): Tuple[] {
-    if (arrays.length === 0) return [[]];
-    const [first, ...rest] = arrays;
-    const restProduct = cartesianProduct(rest);
-    return first.flatMap(value => restProduct.map(product => [value, ...product]));
+function* lazyCartesianProduct<T>(arrays: T[][]): Generator<T[]> {
+  if (arrays.length === 0) {
+    yield [];
+    return;
   }
 
-  return cartesianProduct(valueSets);
+  const [first, ...rest] = arrays;
+  for (const value of first) {
+    for (const combination of lazyCartesianProduct(rest)) {
+      yield [value, ...combination];
+    }
+  }
+}
+
+function getCombinationsLazy(arrays: Tuple[][]): Generator<Tuple> {
+  // Flatten each Tuple[][] into SingleValue[][] for Cartesian product
+  const valueSets: SingleValue[][] = arrays.map(tuple => tuple.flat());
+
+  // Use the lazy Cartesian product generator
+  return lazyCartesianProduct(valueSets);
 }
 
 ///// Forge builtin functions we support /////
@@ -293,86 +300,70 @@ export class ForgeExprEvaluator
       throw new Error('**NOT IMPLEMENTING FOR NOW** Bind Expression');
     }
     if (ctx.quant()) {
-      // results = [];
-      // results.push([
-      //   '**UNIMPLEMENTED** Quantified Expression (`all`, `some`, `no`, etc.)'
-      // ]);
-
-      // TODO: add support for disj here
-      if (ctx.quantDeclList() === undefined) {
-        throw new Error('Expected the quantifier to have a quantDeclList!');
-      }
       const varQuantifiedSets = this.getQuantDeclListValues(ctx.quantDeclList()!);
-
       const isDisjoint = ctx.DISJ_TOK() !== undefined;
-
-      // NOTE: this doesn't support the situation in which blockOrBar is a block
-      // yet
+    
       const blockOrBar = ctx.blockOrBar();
-      if (blockOrBar === undefined) {
-        throw new Error('expected to quantify over something!');
-      }
-      if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
+      if (blockOrBar === undefined || blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
         throw new Error('Expected the quantifier to have a bar followed by an expr!');
       }
       const barExpr = blockOrBar.expr()!;
+    
       const varNames: string[] = [];
       const quantifiedSets: Tuple[][] = [];
       for (const varName in varQuantifiedSets) {
         varNames.push(varName);
         quantifiedSets.push(varQuantifiedSets[varName]);
       }
-      const product: Tuple[] = getCombinations(quantifiedSets);
-
-      const result: Tuple[] = [];
-
+    
+      // Use lazy Cartesian product
+      const product = getCombinationsLazy(quantifiedSets);
+    
       let foundTrue = false;
       let foundFalse = false;
-
-      for (let i = 0; i < product.length; i++) {
-        const tuple = product[i];
+    
+      for (const tuple of product) {
         if (isDisjoint) {
-          // the elements of the tuple must be different
-          let tupleDisjoint = true;
+          // Ensure the tuple elements are disjoint
           const seen = new Set();
-          for (const val of tuple) {
-            if (seen.has(val)) {
-              tupleDisjoint = false;
-              break;
-            }
-            seen.add(val);
-          }
-          if (!tupleDisjoint) {
+          if (!tuple.every(val => !seen.has(val) && seen.add(val))) {
             continue;
           }
         }
+    
         const quantDeclEnv: Environment = {
           env: {},
-          type: 'quantDecl'
+          type: 'quantDecl',
         };
-        for (let j = 0; j < varNames.length; j++) {
-          const varName = varNames[j];
-          const varValue = tuple[j];
-          quantDeclEnv.env[varName] = varValue;
+        for (let i = 0; i < varNames.length; i++) {
+          quantDeclEnv.env[varNames[i]] = tuple[i];
         }
-
+    
         this.environmentStack.push(quantDeclEnv);
-
-        // now, we want to evaluate the barExpr
+    
         const barExprValue = this.visit(barExpr);
         if (!isBoolean(barExprValue)) {
-          throw new Error('Expected the expression after the bar to be a boolean!');
+          throw new Error('Expected the expression after the bar to be a boolean value!');
         }
+    
         if (barExprValue) {
-          result.push(tuple);
           foundTrue = true;
         } else {
           foundFalse = true;
         }
-
+    
         this.environmentStack.pop();
+    
+        // Short-circuit for `SHOULD THIS BE SUM?` and `no`
+        if (ctx.quant()!.SUM_TOK() && foundTrue) {
+          return true;
+        }
+        if (ctx.quant()!.NO_TOK() && foundFalse) {
+          return false;
+        }
       }
-
+    
+      // Handle quantifier results
       if (ctx.quant()!.ALL_TOK()) {
         return !foundFalse;
       } else if (ctx.quant()!.NO_TOK()) {
@@ -380,16 +371,17 @@ export class ForgeExprEvaluator
       } else if (ctx.quant()!.mult()) {
         const multExpr = ctx.quant()!.mult()!;
         if (multExpr.LONE_TOK()) {
-          return result.length <= 1;
-        } else if (multExpr.SOME_TOK()) {
+          return foundTrue && !foundFalse && quantifiedSets.length <= 1;
+        } else if (multExpr.SOME_TOK()) {  
           return foundTrue;
         } else if (multExpr.ONE_TOK()) {
-          result.length === 1;
+          return foundTrue && quantifiedSets.length === 1;
         } else if (multExpr.TWO_TOK()) {
           throw new Error('**NOT IMPLEMENTING FOR NOW** Two (`two`)');
         }
       }
-      // TODO: don't have support for SUM_TOK yet
+    
+      throw new Error('Unexpected quantifier type!');
     }
 
     // TODO: fix this!
@@ -1300,19 +1292,13 @@ export class ForgeExprEvaluator
       throw new Error('`this` is Alloy specific; it is not supported by Forge!');
     }
     if (ctx.LEFT_CURLY_TOK()) {
-      // first, we need to get the variables from the quantDeclList
       if (ctx.quantDeclList() === undefined) {
         throw new Error('expected a quantDeclList in the set comprehension!');
       }
       const varQuantifiedSets = this.getQuantDeclListValues(ctx.quantDeclList()!);
 
-      // NOTE: this doesn't support the situation in which blockOrBar is a block
-      // here (DISCUSS WITH Tim)
       const blockOrBar = ctx.blockOrBar();
-      if (blockOrBar === undefined) {
-        throw new Error('expected a blockOrBar in the set comprehension!');
-      }
-      if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
+      if (blockOrBar === undefined || blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
         throw new Error('expected a bar followed by an expr in the set comprehension!');
       }
       const barExpr = blockOrBar.expr()!;
@@ -1323,30 +1309,28 @@ export class ForgeExprEvaluator
         varNames.push(varName);
         quantifiedSets.push(varQuantifiedSets[varName]);
       }
-      const product: Tuple[] = getCombinations(quantifiedSets);
+
+      // Use lazy Cartesian product
+      const product = getCombinationsLazy(quantifiedSets);
 
       const result: Tuple[] = [];
 
-      for (let i = 0; i < product.length; i++) {
-        const tuple = product[i];
+      for (const tuple of product) {
         const quantDeclEnv: Environment = {
           env: {},
           type: 'quantDecl',
         };
-        for (let j = 0; j < varNames.length; j++) {
-          const varName = varNames[j];
-          const varValue = tuple[j];
-          quantDeclEnv.env[varName] = varValue;
+        for (let i = 0; i < varNames.length; i++) {
+          quantDeclEnv.env[varNames[i]] = tuple[i];
         }
 
         this.environmentStack.push(quantDeclEnv);
 
-        // now, we want to evaluate the barExpr
         const barExprValue = this.visit(barExpr);
         if (!isBoolean(barExprValue)) {
           throw new Error('Expected the expression after the bar to be a boolean value!');
         }
-        if (barExprValue) { // will error if not boolean val, which we want
+        if (barExprValue) {
           result.push(tuple);
         }
 
