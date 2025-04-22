@@ -71,6 +71,50 @@ function getCombinations(arrays) {
     }
     return cartesianProduct(valueSets);
 }
+function transitiveClosure(pairs) {
+    if (pairs.length === 0)
+        return [];
+    // pairs should be a relation of arity 2 (error if this isn't the case)
+    pairs.forEach((tuple) => {
+        if (tuple.length !== 2) {
+            throw new Error('transitive closure ^ expected a relation of arity 2');
+        }
+    });
+    // build an adjacency list
+    const graph = new Map();
+    for (const [from, to] of pairs) {
+        if (!graph.has(from)) {
+            graph.set(from, new Set());
+        }
+        graph.get(from).add(to);
+    }
+    // perform BFS from each node to get the transitive closure
+    // NOTE: we use Set<string> instead of Set<[SingleValue, SingleValue]> since
+    // TS would compute equality over the object's reference instead of the value
+    // when the value is an array
+    const transitiveClosure = new Set();
+    for (const start of graph.keys()) {
+        const visited = new Set();
+        const queue = [...(graph.get(start) ?? [])];
+        while (queue.length > 0) {
+            const current = queue.shift();
+            if (visited.has(current))
+                continue;
+            visited.add(current);
+            transitiveClosure.add(JSON.stringify([start, current]));
+            const neighbors = graph.get(current);
+            if (neighbors) {
+                for (const neighbor of neighbors) {
+                    if (!visited.has(neighbor)) {
+                        queue.push(neighbor);
+                    }
+                }
+            }
+        }
+    }
+    // convert the result back to a Tuple[] and return
+    return Array.from(transitiveClosure).map((pair) => JSON.parse(pair));
+}
 ///// Forge builtin functions we support /////
 // this is a list of forge builtin functions we currently support; add to this
 // list as we support more
@@ -1042,11 +1086,15 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             throw new Error('expected the expression provided to ~ to have arity 2; bad arity received!');
         }
         if (ctx.EXP_TOK()) {
-            results.push(['**UNIMPLEMENTED** ^']);
-            // TODO: we need to implement ^ using childrenResults
-            //       and then return the result
-            //       just returning results here for now
-            return results;
+            // results.push(['**UNIMPLEMENTED** ^']);
+            // // TODO: we need to implement ^ using childrenResults
+            // //       and then return the result
+            // //       just returning results here for now
+            // return results;
+            if (isTupleArray(childrenResults)) {
+                return transitiveClosure(childrenResults);
+            }
+            throw new Error('transitive closure ^ expected a relation of arity 2, not a singular value!');
         }
         if (ctx.STAR_TOK()) {
             results.push(['**UNIMPLEMENTED** *']);
