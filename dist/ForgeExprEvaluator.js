@@ -332,11 +332,17 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 throw new Error('Expected the OR operator to have 2 operands of the right type!');
             }
             const leftChildValue = this.visit(ctx.expr1());
-            const rightChildValue = this.visit(ctx.expr1_5());
-            if (!isBoolean(leftChildValue) || !isBoolean(rightChildValue)) {
+            if (!isBoolean(leftChildValue)) {
                 throw new Error('OR operator expected 2 boolean operands!');
             }
-            return leftChildValue || rightChildValue;
+            if (leftChildValue) { // short circuit and return true if this is true
+                return leftChildValue;
+            }
+            const rightChildValue = this.visit(ctx.expr1_5());
+            if (!isBoolean(rightChildValue)) {
+                throw new Error('OR operator expected 2 boolean operands!');
+            }
+            return rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
         //console.log('childrenResults in expr1:', childrenResults);
@@ -383,12 +389,18 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 throw new Error('Expected the IMP operator to have 2 operands of the right type!');
             }
             const leftChildValue = this.visit(ctx.expr4());
-            const rightChildValue = this.visit(ctx.expr3()[0]);
-            // TODO: add support for ELSE_TOK over here
-            if (!isBoolean(leftChildValue) || !isBoolean(rightChildValue)) {
+            if (!isBoolean(leftChildValue)) {
                 throw new Error('IMP operator expected 2 boolean operands!');
             }
-            return !leftChildValue || rightChildValue;
+            if (!leftChildValue) { // short circuit if the antecedent is false
+                return true;
+            }
+            const rightChildValue = this.visit(ctx.expr3()[0]);
+            // TODO: add support for ELSE_TOK over here
+            if (!isBoolean(rightChildValue)) {
+                throw new Error('IMP operator expected 2 boolean operands!');
+            }
+            return rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
         //console.log('childrenResults in expr3:', childrenResults);
@@ -401,11 +413,17 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 throw new Error('Expected the AND operator to have 2 operands of the right type!');
             }
             const leftChildValue = this.visit(ctx.expr4());
-            const rightChildValue = this.visit(ctx.expr4_5());
-            if (!isBoolean(leftChildValue) || !isBoolean(rightChildValue)) {
+            if (!isBoolean(leftChildValue)) {
                 throw new Error('AND operator expected 2 boolean operands!');
             }
-            return leftChildValue && rightChildValue;
+            if (!leftChildValue) {
+                return leftChildValue; // short circuit if the first operand is false
+            }
+            const rightChildValue = this.visit(ctx.expr4_5());
+            if (!isBoolean(rightChildValue)) {
+                throw new Error('AND operator expected 2 boolean operands!');
+            }
+            return rightChildValue;
         }
         const childrenResults = this.visitChildren(ctx);
         //console.log('childrenResults in expr4:', childrenResults);

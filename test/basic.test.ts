@@ -283,6 +283,61 @@ describe("forge-expr-evaluator", () => {
     expect(result).toEqual(1);
   });
 
+  it("can evaluate basic boolean operations", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "false and false";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual(false);
+
+    const expr2 = "false and true";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+    expect(result2).toEqual(false);
+
+    const expr3 = "true and false";
+    const result3 = evaluatorUtil.evaluateExpression(expr3, instanceIdx);
+    expect(result3).toEqual(false);
+
+    const expr4 = "true and true";
+    const result4 = evaluatorUtil.evaluateExpression(expr4, instanceIdx);
+    expect(result4).toEqual(true);
+
+    const expr5 = "false or false";
+    const result5 = evaluatorUtil.evaluateExpression(expr5, instanceIdx);
+    expect(result5).toEqual(false);
+
+    const expr6 = "false or true";
+    const result6 = evaluatorUtil.evaluateExpression(expr6, instanceIdx);
+    expect(result6).toEqual(true);
+
+    const expr7 = "true or false";
+    const result7 = evaluatorUtil.evaluateExpression(expr7, instanceIdx);
+    expect(result7).toEqual(true);
+
+    const expr8 = "true or true";
+    const result8 = evaluatorUtil.evaluateExpression(expr8, instanceIdx);
+    expect(result8).toEqual(true);
+
+    const expr9 = "false implies false";
+    const result9 = evaluatorUtil.evaluateExpression(expr9, instanceIdx);
+    expect(result9).toEqual(true);
+
+    const expr10 = "false implies true";
+    const result10 = evaluatorUtil.evaluateExpression(expr10, instanceIdx);
+    expect(result10).toEqual(true);
+
+    const expr11 = "true implies false";
+    const result11 = evaluatorUtil.evaluateExpression(expr11, instanceIdx);
+    expect(result11).toEqual(false);
+
+    const expr12 = "true implies true";
+    const result12 = evaluatorUtil.evaluateExpression(expr12, instanceIdx);
+    expect(result12).toEqual(true);
+  });
+
   // it("can evaluate a complex set comprehension", () => {
   //   const datum: DatumParsed = gridCellDatum;
   //   const sourceCode = getCodeFromDatum(datum);
