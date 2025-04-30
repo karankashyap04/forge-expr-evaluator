@@ -364,6 +364,40 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
 
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+  it("respects integer bitwidth and wraps around", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+    // NOTE: the bitwidth for this instance is 4
+
+    const expr1 = "add[7, 1]";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual(-8);
+
+    const expr2 = "add[7, 3]";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+    expect(result2).toEqual(-6);
+
+    const expr4 = "subtract[subtract[-6, 1], 2]";
+    const result4 = evaluatorUtil.evaluateExpression(expr4, instanceIdx);
+    expect(result4).toEqual(7);
+
+    const expr5 = "#Int";
+    const result5 = evaluatorUtil.evaluateExpression(expr5, instanceIdx);
+    expect(result5).toEqual(0);
+  });
+
+  it("errors if the user writes a number that is outside the bitwidth", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr = "8";
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
     expect(result).toHaveProperty('error');
   });
 });
