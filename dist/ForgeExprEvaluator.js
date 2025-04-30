@@ -71,6 +71,20 @@ function getCombinations(arrays) {
     }
     return cartesianProduct(valueSets);
 }
+function bitwidthWraparound(value, bitwidth) {
+    const modulus = Math.pow(2, bitwidth); // total number of Int values
+    const halfValue = Math.pow(2, bitwidth - 1); // halfway point
+    // in general, applying the modulus restricts the value to [-modulus + 1, modulus - 1]
+    // adding modulus and then applying the modulus again means we restrict the
+    // value to [0, modulus - 1]
+    let wrappedValue = ((value % modulus) + modulus) % modulus;
+    // if the sign bit is set (wrappedValue >= halfValue), then the value should
+    // be negative so we just subtract the modulus
+    if (wrappedValue >= halfValue) {
+        wrappedValue -= modulus;
+    }
+    return wrappedValue;
+}
 ///// Forge builtin functions we support /////
 // this is a list of forge builtin functions we currently support; add to this
 // list as we support more
@@ -85,6 +99,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         this.datum = datum;
         this.instanceIndex = instanceIndex;
         this.instanceData = this.datum.parsed.instances[this.instanceIndex];
+        this.bitwidth = this.datum.parsed.bitwidth;
         this.predicates = predicates;
         this.environmentStack = [];
     }
@@ -761,7 +776,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             if (!isTupleArray(childrenResults)) {
                 throw new Error('The cardinal operator must be applied to a set of tuples!');
             }
-            return childrenResults.length;
+            return bitwidthWraparound(childrenResults.length, this.bitwidth);
         }
         return childrenResults;
     }
@@ -921,7 +936,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                         arg2 = insideBracesExprs[1];
                     }
                     // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
-                    return arg1 + arg2;
+                    return bitwidthWraparound(arg1 + arg2, this.bitwidth);
                 }
             }
             // subtract
@@ -959,7 +974,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                         arg2 = insideBracesExprs[1];
                     }
                     // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
-                    return arg1 - arg2;
+                    return bitwidthWraparound(arg1 - arg2, this.bitwidth);
                 }
             }
             if (isTupleArray(beforeBracesExpr)) {
@@ -1110,13 +1125,21 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         }
     }
     visitExpr18(ctx) {
-        //console.log('visiting expr18:', ctx.text);
+        // console.log('visiting expr18:', ctx.text);
         let results = [];
         if (ctx.const()) {
             const constant = ctx.const();
             if (constant.number() !== undefined) {
                 const num = Number(constant.number().text);
-                return constant.MINUS_TOK() !== undefined ? -num : num;
+                const value = constant.MINUS_TOK() !== undefined ? -num : num;
+                // if the user mentions a constant that is outside the bitwidth, it
+                // causes an error
+                const maxValue = Math.pow(2, this.bitwidth - 1) - 1;
+                const minValue = -1 * Math.pow(2, this.bitwidth - 1);
+                if (value > maxValue || value < minValue) {
+                    throw new Error(`Constant ${value} is outside the bitwidth of ${this.bitwidth}!`);
+                }
+                return value;
             }
             return `${constant.text}`;
         }
@@ -1229,7 +1252,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         return this.visitChildren(ctx);
     }
     visitName(ctx) {
-        //console.log('visiting name:', ctx.text);
+        // console.log('visiting name:', ctx.text);
         // if `true` or `false`, return the corresponding value
         const identifier = ctx.IDENTIFIER_TOK().text;
         if (identifier === 'true') {

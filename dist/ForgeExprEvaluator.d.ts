@@ -14,6 +14,7 @@ export declare class ForgeExprEvaluator extends AbstractParseTreeVisitor<EvalRes
     private datum;
     private instanceIndex;
     private instanceData;
+    private bitwidth;
     private predicates;
     private environmentStack;
     constructor(datum: DatumParsed, instanceIndex: number, predicates: Predicate[]);
