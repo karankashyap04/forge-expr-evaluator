@@ -1086,11 +1086,6 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             throw new Error('expected the expression provided to ~ to have arity 2; bad arity received!');
         }
         if (ctx.EXP_TOK()) {
-            // results.push(['**UNIMPLEMENTED** ^']);
-            // // TODO: we need to implement ^ using childrenResults
-            // //       and then return the result
-            // //       just returning results here for now
-            // return results;
             if (isTupleArray(childrenResults)) {
                 return transitiveClosure(childrenResults);
             }
