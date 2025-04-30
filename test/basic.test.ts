@@ -364,6 +364,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
 
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+  });
 
   it("respects integer bitwidth and wraps around", () => {
     const datum: DatumParsed = tttDatum;
