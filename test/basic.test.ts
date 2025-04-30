@@ -323,6 +323,49 @@ describe("forge-expr-evaluator", () => {
   //   ]);
   // });
 
+  it("can evaluate a transitive closure", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "^(Game0.next)";
+    const instanceIdx = 0;
+
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+    expect(result).toEqual([
+      ["Board0", "Board1"],
+      ["Board0", "Board2"],
+      ["Board0", "Board3"],
+      ["Board0", "Board4"],
+      ["Board0", "Board5"],
+      ["Board0", "Board6"],
+      ["Board1", "Board2"],
+      ["Board1", "Board3"],
+      ["Board1", "Board4"],
+      ["Board1", "Board5"],
+      ["Board1", "Board6"],
+      ["Board2", "Board3"],
+      ["Board2", "Board4"],
+      ["Board2", "Board5"],
+      ["Board2", "Board6"],
+      ["Board3", "Board4"],
+      ["Board3", "Board5"],
+      ["Board3", "Board6"],
+      ["Board4", "Board5"],
+      ["Board4", "Board6"],
+      ["Board5", "Board6"]
+    ]);
+  });
+
+  it("errors if transitive closure is attempted on a relation of arity other than 2", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "^(Board6.board)"; // has arity 3
+    const instanceIdx = 0;
+
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+  });
+
   it("respects integer bitwidth and wraps around", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);
