@@ -170,11 +170,47 @@ describe("forge-expr-evaluator", () => {
     const sourceCode = getCodeFromDatum(datum);
 
     const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
-    const expr = "some i : Int | i < 4";
     const instanceIdx = 0;
-    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual(true);
+    const expr1 = "some i : Int | i < 4";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual(true);
+
+    const expr2 = "some i : Int | i > 7";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+    expect(result2).toEqual(false);
+
+    const expr3 = "all i : Int | i = i";
+    const result3 = evaluatorUtil.evaluateExpression(expr3, instanceIdx);
+    expect(result3).toEqual(true);
+
+    const expr4 = "all i : Int | i < 4";
+    const result4 = evaluatorUtil.evaluateExpression(expr4, instanceIdx);
+    expect(result4).toEqual(false);
+
+    const expr5 = "no i : Int | i > 7";
+    const result5 = evaluatorUtil.evaluateExpression(expr5, instanceIdx);
+    expect(result5).toEqual(true);
+
+    const expr6 = "no i : Int | i < 4";
+    const result6 = evaluatorUtil.evaluateExpression(expr6, instanceIdx);
+    expect(result6).toEqual(false);
+
+    const expr7 = "one i : Int | i = 2";
+    const result7 = evaluatorUtil.evaluateExpression(expr7, instanceIdx);
+    expect(result7).toEqual(true);
+
+    const expr8 = "one i : Int | i > 2";
+    const result8 = evaluatorUtil.evaluateExpression(expr8, instanceIdx);
+    expect(result8).toEqual(false);
+
+    const expr9 = "lone i : Int | i > 7";
+    const result9 = evaluatorUtil.evaluateExpression(expr9, instanceIdx);
+    expect(result9).toEqual(true);
+
+    const expr10 = "lone i : Int | i < 4";
+    const result10 = evaluatorUtil.evaluateExpression(expr10, instanceIdx);
+    expect(result10).toEqual(false);
   });
 
   it("can quantify in a truthy way if there is a block after the bar", () => {

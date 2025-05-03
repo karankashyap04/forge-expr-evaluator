@@ -341,6 +341,25 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     foundFalse = true;
                 }
                 this.environmentStack.pop();
+                // short-circuit if possible
+                if (ctx.quant().ALL_TOK() && foundFalse) {
+                    return false;
+                }
+                if (ctx.quant().NO_TOK() && foundTrue) {
+                    return false;
+                }
+                if (ctx.quant().mult()) {
+                    const multExpr = ctx.quant().mult();
+                    if (multExpr.LONE_TOK() && result.length > 1) {
+                        return false;
+                    }
+                    if (multExpr.SOME_TOK() && foundTrue) {
+                        return true;
+                    }
+                    if (multExpr.ONE_TOK() && result.length > 1) {
+                        return false;
+                    }
+                }
             }
             if (ctx.quant().ALL_TOK()) {
                 return !foundFalse;
@@ -357,7 +376,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     return foundTrue;
                 }
                 else if (multExpr.ONE_TOK()) {
-                    result.length === 1;
+                    return result.length === 1;
                 }
                 else if (multExpr.TWO_TOK()) {
                     throw new Error('**NOT IMPLEMENTING FOR NOW** Two (`two`)');
