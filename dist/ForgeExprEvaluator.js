@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ForgeExprEvaluator = void 0;
+exports.ForgeExprEvaluator = exports.SUPPORTED_BUILTINS = void 0;
 const AbstractParseTreeVisitor_1 = require("antlr4ts/tree/AbstractParseTreeVisitor");
 const lodash_1 = require("lodash");
 const TRUE_LITERAL = '#t';
@@ -132,7 +132,7 @@ function bitwidthWraparound(value, bitwidth) {
 ///// Forge builtin functions we support /////
 // this is a list of forge builtin functions we currently support; add to this
 // list as we support more
-const SUPPORTED_BUILTINS = ['add', 'subtract'];
+exports.SUPPORTED_BUILTINS = ['add', 'subtract'];
 /**
  * A recursive evaluator for Forge expressions.
  * This visitor walks the parse tree and prints the type of operation encountered.
@@ -1482,7 +1482,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return result;
         }
         // return identifier;
-        if (this.isPredicateName(identifier) || SUPPORTED_BUILTINS.includes(identifier)) {
+        if (this.isPredicateName(identifier) || exports.SUPPORTED_BUILTINS.includes(identifier)) {
             return identifier;
         }
         throw new Error(`bad name ${identifier} referenced!`);

@@ -6,6 +6,7 @@ import { Predicate } from './types';
 export type SingleValue = string | number | boolean;
 export type Tuple = SingleValue[];
 export type EvalResult = SingleValue | Tuple[];
+export declare const SUPPORTED_BUILTINS: string[];
 /**
  * A recursive evaluator for Forge expressions.
  * This visitor walks the parse tree and prints the type of operation encountered.
