@@ -1,7 +1,7 @@
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
-import { ForgeVisitor } from "./ForgeVisitor";
-import { Atom, DatumParsed, InstanceData, Predicate } from "../types";
+import { ForgeVisitor } from "./forge-antlr/ForgeVisitor";
+import { Atom, DatumParsed, InstanceData, Predicate } from "./types";
 import {
   BlockContext,
   Expr10Context,
@@ -31,8 +31,8 @@ import {
   PredDeclContext,
   QuantDeclContext,
   QuantDeclListContext,
-} from "./ForgeParser";
-import { SUPPORTED_BUILTINS } from "../ForgeExprEvaluator";
+} from "./forge-antlr/ForgeParser";
+import { SUPPORTED_BUILTINS } from "./ForgeExprEvaluator";
 
 // defining the return type for the visitor
 export type FreeVariables = Map<ParseTree, Set<string>>;
