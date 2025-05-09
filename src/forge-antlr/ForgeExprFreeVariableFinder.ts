@@ -61,7 +61,11 @@ export class ForgeExprFreeVariableFinder
   private instanceData: InstanceData;
   private predicates: Predicate[];
 
-  constructor(datum: DatumParsed, instanceIndex: number, predicates: Predicate[]) {
+  constructor(
+    datum: DatumParsed,
+    instanceIndex: number,
+    predicates: Predicate[]
+  ) {
     super();
     this.datum = datum;
     this.instanceIndex = instanceIndex;
@@ -69,7 +73,10 @@ export class ForgeExprFreeVariableFinder
     this.predicates = predicates;
   }
 
-  protected aggregateResult(aggregate: FreeVariables, nextResult: FreeVariables): FreeVariables {
+  protected aggregateResult(
+    aggregate: FreeVariables,
+    nextResult: FreeVariables
+  ): FreeVariables {
     if (!aggregate) {
       return nextResult;
     }
@@ -89,7 +96,11 @@ export class ForgeExprFreeVariableFinder
     return aggregate;
   }
 
-  private addCtxToFreeVariableMap(ctx: ParseTree, freeVariables: FreeVariables, additionalVars?: Set<string>): FreeVariables {
+  private addCtxToFreeVariableMap(
+    ctx: ParseTree,
+    freeVariables: FreeVariables,
+    additionalVars?: Set<string>
+  ): FreeVariables {
     if (!freeVariables.has(ctx)) {
       freeVariables.set(ctx, getAllFreeVariables(freeVariables));
     }
@@ -181,7 +192,9 @@ export class ForgeExprFreeVariableFinder
       if (ctx.quantDeclList() === undefined) {
         throw new Error("Expected the quantifier to have a quantDeclList");
       }
-      const quantDeclListVars = this.getQuantDeclListVarNames(ctx.quantDeclList()!);
+      const quantDeclListVars = this.getQuantDeclListVarNames(
+        ctx.quantDeclList()!
+      );
 
       // we need to get all the vars referenced here other than the vars
       // bound by the quantifier (in quantDeclListVars)
@@ -189,8 +202,13 @@ export class ForgeExprFreeVariableFinder
       if (blockOrBar === undefined) {
         throw new Error("expected to quantify over something!");
       }
-      if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
-        throw new Error("Expected the quantifier to have a bar followed by an expr!");
+      if (
+        blockOrBar.BAR_TOK() === undefined ||
+        blockOrBar.expr() === undefined
+      ) {
+        throw new Error(
+          "Expected the quantifier to have a bar followed by an expr!"
+        );
       }
       let allFreeVars: FreeVariables;
       if (blockOrBar.block() !== undefined) {
@@ -198,17 +216,30 @@ export class ForgeExprFreeVariableFinder
       } else {
         allFreeVars = this.visit(blockOrBar.expr()!);
       }
-      // remove the variables bound by the quantifier from the result
-      for (const [contextNode, variables] of allFreeVars.entries()) {
-        const filteredVariables = new Set<string>();
-        for (const variable of variables) {
-          if (!quantDeclListVars.has(variable)) {
-            filteredVariables.add(variable);
-          }
+      // // remove the variables bound by the quantifier from the result
+      // for (const [contextNode, variables] of allFreeVars.entries()) {
+      //   const filteredVariables = new Set<string>();
+      //   for (const variable of variables) {
+      //     if (!quantDeclListVars.has(variable)) {
+      //       filteredVariables.add(variable);
+      //     }
+      //   }
+      //   allFreeVars.set(contextNode, filteredVariables);
+      // }
+
+      // the context node for the quantifier as a whole shouldn't have _all_ of these
+      // free vars; specifically, it should not include the vars that are being
+      // bound by the quantifier
+      // so we need to remove the variables bound by the quantifier from the result
+      const allVars = getAllFreeVariables(allFreeVars);
+      const filteredVariables = new Set<string>();
+      for (const variable of allVars) {
+        if (!quantDeclListVars.has(variable)) {
+          filteredVariables.add(variable);
         }
-        allFreeVars.set(contextNode, filteredVariables);
       }
-      return this.addCtxToFreeVariableMap(ctx, allFreeVars);
+      allFreeVars.set(ctx, filteredVariables);
+      return allFreeVars;
     }
 
     const childrenResults = this.visitChildren(ctx);
@@ -313,20 +344,28 @@ export class ForgeExprFreeVariableFinder
   }
 
   visitExpr18(ctx: Expr18Context): FreeVariables {
-    if (ctx.LEFT_CURLY_TOK()) { // set comprehension
+    if (ctx.LEFT_CURLY_TOK()) {
+      // set comprehension
       if (ctx.quantDeclList() === undefined) {
-        throw new Error('expected a quantDeclList in the set comprehension!');
+        throw new Error("expected a quantDeclList in the set comprehension!");
       }
-      const quantDeclListVars = this.getQuantDeclListVarNames(ctx.quantDeclList()!);
+      const quantDeclListVars = this.getQuantDeclListVarNames(
+        ctx.quantDeclList()!
+      );
 
       // we need to get all the vars referenced here other than the vars
       // bound by the quantifier (in quantDeclListVars)
       const blockOrBar = ctx.blockOrBar();
       if (blockOrBar === undefined) {
-        throw new Error('expected a blockOrBar in the set comprehension!');
+        throw new Error("expected a blockOrBar in the set comprehension!");
       }
-      if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
-        throw new Error('expected a bar followed by an expr in the set comprehension!');
+      if (
+        blockOrBar.BAR_TOK() === undefined ||
+        blockOrBar.expr() === undefined
+      ) {
+        throw new Error(
+          "expected a bar followed by an expr in the set comprehension!"
+        );
       }
       let allFreeVars: FreeVariables;
       if (blockOrBar.block() !== undefined) {
@@ -334,19 +373,33 @@ export class ForgeExprFreeVariableFinder
       } else {
         allFreeVars = this.visit(blockOrBar.expr()!);
       }
-      // remove the variables bound by the quantifier from the result
-      for (const [contextNode, variables] of allFreeVars.entries()) {
-        const filteredVariables = new Set<string>();
-        for (const variable of variables) {
-          if (!quantDeclListVars.has(variable)) {
-            filteredVariables.add(variable);
-          }
+      // // remove the variables bound by the quantifier from the result
+      // for (const [contextNode, variables] of allFreeVars.entries()) {
+      //   const filteredVariables = new Set<string>();
+      //   for (const variable of variables) {
+      //     if (!quantDeclListVars.has(variable)) {
+      //       filteredVariables.add(variable);
+      //     }
+      //   }
+      //   allFreeVars.set(contextNode, filteredVariables);
+      // }
+      // return this.addCtxToFreeVariableMap(ctx, allFreeVars);
+
+      // the context node for the quantifier as a whole shouldn't have _all_ of these
+      // free vars; specifically, it should not include the vars that are being
+      // bound by the quantifier
+      // so we need to remove the variables bound by the quantifier from the result
+      const allVars = getAllFreeVariables(allFreeVars);
+      const filteredVariables = new Set<string>();
+      for (const variable of allVars) {
+        if (!quantDeclListVars.has(variable)) {
+          filteredVariables.add(variable);
         }
-        allFreeVars.set(contextNode, filteredVariables);
       }
-      return this.addCtxToFreeVariableMap(ctx, allFreeVars);
+      allFreeVars.set(ctx, filteredVariables);
+      return allFreeVars;
     }
-    
+
     const childrenResults = this.visitChildren(ctx);
     return this.addCtxToFreeVariableMap(ctx, childrenResults);
   }
@@ -355,7 +408,7 @@ export class ForgeExprFreeVariableFinder
     let result = this.defaultResult(); // aggregator
     if (ctx.COMMA_TOK()) {
       if (ctx.exprList() === undefined) {
-        throw new Error('exprList with a comma must have a tail!');
+        throw new Error("exprList with a comma must have a tail!");
       }
       const headFreeVars = this.visit(ctx.expr());
       const tailFreeVars = this.visit(ctx.exprList()!);
@@ -376,7 +429,8 @@ export class ForgeExprFreeVariableFinder
   visitName(ctx: NameContext): FreeVariables {
     const identifier = ctx.IDENTIFIER_TOK().text;
 
-    if (identifier === 'true' || identifier === 'false') { // these aren't free variables
+    if (identifier === "true" || identifier === "false") {
+      // these aren't free variables
       return this.defaultResult();
     }
 

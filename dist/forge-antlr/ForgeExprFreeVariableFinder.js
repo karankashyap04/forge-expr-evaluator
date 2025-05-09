@@ -136,7 +136,8 @@ class ForgeExprFreeVariableFinder extends AbstractParseTreeVisitor_1.AbstractPar
             if (blockOrBar === undefined) {
                 throw new Error("expected to quantify over something!");
             }
-            if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
+            if (blockOrBar.BAR_TOK() === undefined ||
+                blockOrBar.expr() === undefined) {
                 throw new Error("Expected the quantifier to have a bar followed by an expr!");
             }
             let allFreeVars;
@@ -146,17 +147,29 @@ class ForgeExprFreeVariableFinder extends AbstractParseTreeVisitor_1.AbstractPar
             else {
                 allFreeVars = this.visit(blockOrBar.expr());
             }
-            // remove the variables bound by the quantifier from the result
-            for (const [contextNode, variables] of allFreeVars.entries()) {
-                const filteredVariables = new Set();
-                for (const variable of variables) {
-                    if (!quantDeclListVars.has(variable)) {
-                        filteredVariables.add(variable);
-                    }
+            // // remove the variables bound by the quantifier from the result
+            // for (const [contextNode, variables] of allFreeVars.entries()) {
+            //   const filteredVariables = new Set<string>();
+            //   for (const variable of variables) {
+            //     if (!quantDeclListVars.has(variable)) {
+            //       filteredVariables.add(variable);
+            //     }
+            //   }
+            //   allFreeVars.set(contextNode, filteredVariables);
+            // }
+            // the context node for the quantifier as a whole shouldn't have _all_ of these
+            // free vars; specifically, it should not include the vars that are being
+            // bound by the quantifier
+            // so we need to remove the variables bound by the quantifier from the result
+            const allVars = getAllFreeVariables(allFreeVars);
+            const filteredVariables = new Set();
+            for (const variable of allVars) {
+                if (!quantDeclListVars.has(variable)) {
+                    filteredVariables.add(variable);
                 }
-                allFreeVars.set(contextNode, filteredVariables);
             }
-            return this.addCtxToFreeVariableMap(ctx, allFreeVars);
+            allFreeVars.set(ctx, filteredVariables);
+            return allFreeVars;
         }
         const childrenResults = this.visitChildren(ctx);
         return this.addCtxToFreeVariableMap(ctx, childrenResults);
@@ -240,19 +253,21 @@ class ForgeExprFreeVariableFinder extends AbstractParseTreeVisitor_1.AbstractPar
         return this.addCtxToFreeVariableMap(ctx, childrenResults);
     }
     visitExpr18(ctx) {
-        if (ctx.LEFT_CURLY_TOK()) { // set comprehension
+        if (ctx.LEFT_CURLY_TOK()) {
+            // set comprehension
             if (ctx.quantDeclList() === undefined) {
-                throw new Error('expected a quantDeclList in the set comprehension!');
+                throw new Error("expected a quantDeclList in the set comprehension!");
             }
             const quantDeclListVars = this.getQuantDeclListVarNames(ctx.quantDeclList());
             // we need to get all the vars referenced here other than the vars
             // bound by the quantifier (in quantDeclListVars)
             const blockOrBar = ctx.blockOrBar();
             if (blockOrBar === undefined) {
-                throw new Error('expected a blockOrBar in the set comprehension!');
+                throw new Error("expected a blockOrBar in the set comprehension!");
             }
-            if (blockOrBar.BAR_TOK() === undefined || blockOrBar.expr() === undefined) {
-                throw new Error('expected a bar followed by an expr in the set comprehension!');
+            if (blockOrBar.BAR_TOK() === undefined ||
+                blockOrBar.expr() === undefined) {
+                throw new Error("expected a bar followed by an expr in the set comprehension!");
             }
             let allFreeVars;
             if (blockOrBar.block() !== undefined) {
@@ -261,17 +276,30 @@ class ForgeExprFreeVariableFinder extends AbstractParseTreeVisitor_1.AbstractPar
             else {
                 allFreeVars = this.visit(blockOrBar.expr());
             }
-            // remove the variables bound by the quantifier from the result
-            for (const [contextNode, variables] of allFreeVars.entries()) {
-                const filteredVariables = new Set();
-                for (const variable of variables) {
-                    if (!quantDeclListVars.has(variable)) {
-                        filteredVariables.add(variable);
-                    }
+            // // remove the variables bound by the quantifier from the result
+            // for (const [contextNode, variables] of allFreeVars.entries()) {
+            //   const filteredVariables = new Set<string>();
+            //   for (const variable of variables) {
+            //     if (!quantDeclListVars.has(variable)) {
+            //       filteredVariables.add(variable);
+            //     }
+            //   }
+            //   allFreeVars.set(contextNode, filteredVariables);
+            // }
+            // return this.addCtxToFreeVariableMap(ctx, allFreeVars);
+            // the context node for the quantifier as a whole shouldn't have _all_ of these
+            // free vars; specifically, it should not include the vars that are being
+            // bound by the quantifier
+            // so we need to remove the variables bound by the quantifier from the result
+            const allVars = getAllFreeVariables(allFreeVars);
+            const filteredVariables = new Set();
+            for (const variable of allVars) {
+                if (!quantDeclListVars.has(variable)) {
+                    filteredVariables.add(variable);
                 }
-                allFreeVars.set(contextNode, filteredVariables);
             }
-            return this.addCtxToFreeVariableMap(ctx, allFreeVars);
+            allFreeVars.set(ctx, filteredVariables);
+            return allFreeVars;
         }
         const childrenResults = this.visitChildren(ctx);
         return this.addCtxToFreeVariableMap(ctx, childrenResults);
@@ -280,7 +308,7 @@ class ForgeExprFreeVariableFinder extends AbstractParseTreeVisitor_1.AbstractPar
         let result = this.defaultResult(); // aggregator
         if (ctx.COMMA_TOK()) {
             if (ctx.exprList() === undefined) {
-                throw new Error('exprList with a comma must have a tail!');
+                throw new Error("exprList with a comma must have a tail!");
             }
             const headFreeVars = this.visit(ctx.expr());
             const tailFreeVars = this.visit(ctx.exprList());
@@ -299,7 +327,8 @@ class ForgeExprFreeVariableFinder extends AbstractParseTreeVisitor_1.AbstractPar
     }
     visitName(ctx) {
         const identifier = ctx.IDENTIFIER_TOK().text;
-        if (identifier === 'true' || identifier === 'false') { // these aren't free variables
+        if (identifier === "true" || identifier === "false") {
+            // these aren't free variables
             return this.defaultResult();
         }
         // if predicate name then not a free variable
