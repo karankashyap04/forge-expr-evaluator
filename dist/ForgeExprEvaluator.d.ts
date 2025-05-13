@@ -6,6 +6,7 @@ import { Predicate } from "./types";
 export type SingleValue = string | number | boolean;
 export type Tuple = SingleValue[];
 export type EvalResult = SingleValue | Tuple[];
+export declare function areTupleArraysEqual(a: Tuple[], b: Tuple[]): boolean;
 export declare const SUPPORTED_BUILTINS: string[];
 /**
  * A recursive evaluator for Forge expressions.
@@ -28,6 +29,7 @@ export declare class ForgeExprEvaluator extends AbstractParseTreeVisitor<EvalRes
     private updateFreeVariables;
     private constructFreeVariableKey;
     private cacheResult;
+    private getIden;
     protected aggregateResult(aggregate: EvalResult, nextResult: EvalResult): EvalResult;
     protected defaultResult(): EvalResult;
     visitPredDecl(ctx: PredDeclContext): EvalResult;
