@@ -1,8 +1,9 @@
-import { ForgeExprEvaluatorUtil } from "../src";
+import { EvaluationResult, ForgeExprEvaluatorUtil } from "../src";
 import { DatumParsed } from "../src/types";
 import tttDatum from "./examples/ttt-basic/datum.json";
 import interSigDatum from "./examples/inter-sig/datum.json";
 import gridCellDatum from "./examples/grid-cell/datum.json";
+import { Tuple, areTupleArraysEqual } from "../src/ForgeExprEvaluator";
 
 // helper function to get module source code from datum
 function getCodeFromDatum(datum: DatumParsed): string {
@@ -22,6 +23,17 @@ function getCodeFromDatum(datum: DatumParsed): string {
     throw new Error("No content attribute found in source element");
   }
   return content;
+}
+
+// helper function to check if an evaluated result is equivalent to a given tuple
+// array (when treated as a set of tuples)
+function areEquivalentTupleArrays(result: EvaluationResult, expected: Tuple[]) {
+  // check if result is a Tuple[]
+  if (Array.isArray(result)) {
+    const resultTuples = result as Tuple[];
+    return areTupleArraysEqual(resultTuples, expected);
+  }
+  return false;
 }
 
 describe("forge-expr-evaluator", () => {
@@ -50,7 +62,8 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([["O0"]]);
+    // expect(result).toEqual([["O0"]]);
+    expect(areEquivalentTupleArrays(result, [["O0"]])).toBe(true);
   });
 
   it("can evaluate Int qualName", () => {
@@ -62,24 +75,26 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([
-      [-8],
-      [-7],
-      [-6],
-      [-5],
-      [-4],
-      [-3],
-      [-2],
-      [-1],
-      [0],
-      [1],
-      [2],
-      [3],
-      [4],
-      [5],
-      [6],
-      [7],
-    ]);
+    expect(
+      areEquivalentTupleArrays(result, [
+        [-8],
+        [-7],
+        [-6],
+        [-5],
+        [-4],
+        [-3],
+        [-2],
+        [-1],
+        [0],
+        [1],
+        [2],
+        [3],
+        [4],
+        [5],
+        [6],
+        [7],
+      ])
+    ).toBe(true);
   });
 
   it("can evaluate a set comprehension", () => {
@@ -91,14 +106,16 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([
-      [0, 0],
-      [0, 1],
-      [0, 2],
-      [1, 0],
-      [1, 1],
-      [2, 0],
-    ]);
+    expect(
+      areEquivalentTupleArrays(result, [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [1, 0],
+        [1, 1],
+        [2, 0],
+      ])
+    ).toBe(true);
   });
 
   it("can evaluate cardinality on the result of a set comprehension", () => {
@@ -122,7 +139,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([["X0"], ["O0"]]);
+    expect(areEquivalentTupleArrays(result, [["X0"], ["O0"]])).toBe(true);
   });
 
   it("can evaluate -> operation", () => {
@@ -134,7 +151,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([["X0", "O0", "X0"]]);
+    expect(areEquivalentTupleArrays(result, [["X0", "O0", "X0"]])).toBe(true);
   });
 
   it("can evaluate basic inter and intra-sig relations", () => {
@@ -162,7 +179,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([["A0"]]);
+    expect(areEquivalentTupleArrays(result, [["A0"]])).toBe(true);
   });
 
   it("can quantify in a truthy way", () => {
@@ -264,7 +281,7 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([["Board0"]]);
+    expect(areEquivalentTupleArrays(result, [["Board0"]])).toBe(true);
   });
 
   it("can evaluate a dot join when neither relation is a singleton", () => {
@@ -276,13 +293,15 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([
-      ["Board0", "Board2"],
-      ["Board1", "Board3"],
-      ["Board2", "Board4"],
-      ["Board3", "Board5"],
-      ["Board4", "Board6"],
-    ]);
+    expect(
+      areEquivalentTupleArrays(result, [
+        ["Board0", "Board2"],
+        ["Board1", "Board3"],
+        ["Board2", "Board4"],
+        ["Board3", "Board5"],
+        ["Board4", "Board6"],
+      ])
+    ).toBe(true);
   });
 
   it("can evaluate a dot join with an implicit single value -> singleton set conversion", () => {
@@ -294,17 +313,19 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([
-      ["Cell0", 2],
-      ["Cell1", 1],
-      ["Cell2", 0],
-      ["Cell3", 2],
-      ["Cell4", 1],
-      ["Cell5", 0],
-      ["Cell6", 2],
-      ["Cell7", 1],
-      ["Cell8", 0],
-    ]);
+    expect(
+      areEquivalentTupleArrays(result, [
+        ["Cell0", 2],
+        ["Cell1", 1],
+        ["Cell2", 0],
+        ["Cell3", 2],
+        ["Cell4", 1],
+        ["Cell5", 0],
+        ["Cell6", 2],
+        ["Cell7", 1],
+        ["Cell8", 0],
+      ])
+    ).toBe(true);
   });
 
   it("can evaluate a number", () => {
@@ -379,39 +400,42 @@ describe("forge-expr-evaluator", () => {
     const sourceCode = getCodeFromDatum(datum);
 
     const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
-    const expr = "{ c1, c2 : Cell | some i,j,k,m : Int | (Grid->i->j->c1 in cells) and (Grid->k->m->c2 in cells) and (i < k) }";
-    const instanceIdx = 0;  
+    const expr =
+      "{ c1, c2 : Cell | some i,j,k,m : Int | (Grid->i->j->c1 in cells) and (Grid->k->m->c2 in cells) and (i < k) }";
+    const instanceIdx = 0;
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toEqual([
-      ["Cell3", "Cell0"],
-      ["Cell3", "Cell1"],
-      ["Cell3", "Cell2"],
-      ["Cell4", "Cell0"],
-      ["Cell4", "Cell1"],
-      ["Cell4", "Cell2"],
-      ["Cell5", "Cell0"],
-      ["Cell5", "Cell1"],
-      ["Cell5", "Cell2"],
-      ["Cell6", "Cell0"],
-      ["Cell6", "Cell1"],
-      ["Cell6", "Cell2"],
-      ["Cell6", "Cell3"],
-      ["Cell6", "Cell4"],
-      ["Cell6", "Cell5"],
-      ["Cell7", "Cell0"],
-      ["Cell7", "Cell1"],
-      ["Cell7", "Cell2"],
-      ["Cell7", "Cell3"],
-      ["Cell7", "Cell4"],
-      ["Cell7", "Cell5"],
-      ["Cell8", "Cell0"],
-      ["Cell8", "Cell1"],
-      ["Cell8", "Cell2"],
-      ["Cell8", "Cell3"],
-      ["Cell8", "Cell4"],
-      ["Cell8", "Cell5"]
-    ]);
+    expect(
+      areEquivalentTupleArrays(result, [
+        ["Cell3", "Cell0"],
+        ["Cell3", "Cell1"],
+        ["Cell3", "Cell2"],
+        ["Cell4", "Cell0"],
+        ["Cell4", "Cell1"],
+        ["Cell4", "Cell2"],
+        ["Cell5", "Cell0"],
+        ["Cell5", "Cell1"],
+        ["Cell5", "Cell2"],
+        ["Cell6", "Cell0"],
+        ["Cell6", "Cell1"],
+        ["Cell6", "Cell2"],
+        ["Cell6", "Cell3"],
+        ["Cell6", "Cell4"],
+        ["Cell6", "Cell5"],
+        ["Cell7", "Cell0"],
+        ["Cell7", "Cell1"],
+        ["Cell7", "Cell2"],
+        ["Cell7", "Cell3"],
+        ["Cell7", "Cell4"],
+        ["Cell7", "Cell5"],
+        ["Cell8", "Cell0"],
+        ["Cell8", "Cell1"],
+        ["Cell8", "Cell2"],
+        ["Cell8", "Cell3"],
+        ["Cell8", "Cell4"],
+        ["Cell8", "Cell5"],
+      ])
+    ).toBe(true);
   });
 
   it("can evaluate a transitive closure", () => {
@@ -422,29 +446,31 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
 
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
-    expect(result).toEqual([
-      ["Board0", "Board1"],
-      ["Board0", "Board2"],
-      ["Board0", "Board3"],
-      ["Board0", "Board4"],
-      ["Board0", "Board5"],
-      ["Board0", "Board6"],
-      ["Board1", "Board2"],
-      ["Board1", "Board3"],
-      ["Board1", "Board4"],
-      ["Board1", "Board5"],
-      ["Board1", "Board6"],
-      ["Board2", "Board3"],
-      ["Board2", "Board4"],
-      ["Board2", "Board5"],
-      ["Board2", "Board6"],
-      ["Board3", "Board4"],
-      ["Board3", "Board5"],
-      ["Board3", "Board6"],
-      ["Board4", "Board5"],
-      ["Board4", "Board6"],
-      ["Board5", "Board6"]
-    ]);
+    expect(
+      areEquivalentTupleArrays(result, [
+        ["Board0", "Board1"],
+        ["Board0", "Board2"],
+        ["Board0", "Board3"],
+        ["Board0", "Board4"],
+        ["Board0", "Board5"],
+        ["Board0", "Board6"],
+        ["Board1", "Board2"],
+        ["Board1", "Board3"],
+        ["Board1", "Board4"],
+        ["Board1", "Board5"],
+        ["Board1", "Board6"],
+        ["Board2", "Board3"],
+        ["Board2", "Board4"],
+        ["Board2", "Board5"],
+        ["Board2", "Board6"],
+        ["Board3", "Board4"],
+        ["Board3", "Board5"],
+        ["Board3", "Board6"],
+        ["Board4", "Board5"],
+        ["Board4", "Board6"],
+        ["Board5", "Board6"],
+      ])
+    ).toBe(true);
   });
 
   it("errors if transitive closure is attempted on a relation of arity other than 2", () => {
@@ -455,6 +481,78 @@ describe("forge-expr-evaluator", () => {
     const instanceIdx = 0;
 
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+    expect(result).toHaveProperty("error");
+  });
+
+  it("can evaluate a reflexive transitive closure", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "*(Game.next)";
+
+    const result = evaluatorUtil.evaluateExpression(expr, 0);
+    expect(
+      areEquivalentTupleArrays(result, [
+        [-8, -8],
+        [-7, -7],
+        [-6, -6],
+        [-5, -5],
+        [-4, -4],
+        [-3, -3],
+        [-2, -2],
+        [-1, -1],
+        [0, 0],
+        [1, 1],
+        [2, 2],
+        [3, 3],
+        [4, 4],
+        [5, 5],
+        [6, 6],
+        [7, 7],
+        ["X0", "X0"],
+        ["O0", "O0"],
+        ["Board0", "Board0"],
+        ["Board0", "Board1"],
+        ["Board0", "Board2"],
+        ["Board0", "Board3"],
+        ["Board0", "Board4"],
+        ["Board0", "Board5"],
+        ["Board0", "Board6"],
+        ["Board1", "Board1"],
+        ["Board1", "Board2"],
+        ["Board1", "Board3"],
+        ["Board1", "Board4"],
+        ["Board1", "Board5"],
+        ["Board1", "Board6"],
+        ["Board2", "Board2"],
+        ["Board2", "Board3"],
+        ["Board2", "Board4"],
+        ["Board2", "Board5"],
+        ["Board2", "Board6"],
+        ["Board3", "Board3"],
+        ["Board3", "Board4"],
+        ["Board3", "Board5"],
+        ["Board3", "Board6"],
+        ["Board4", "Board4"],
+        ["Board4", "Board5"],
+        ["Board4", "Board6"],
+        ["Board5", "Board5"],
+        ["Board5", "Board6"],
+        ["Board6", "Board6"],
+        ["Game0", "Game0"],
+      ])
+    ).toBe(true);
+  });
+
+  it("errors if reflexive transitive closure is attempted on a relation of arity other than 2", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const expr = "*(Board6.board)"; // has arity 3
+    const instanceIdx = 0;
+
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+    expect(result).toHaveProperty("error");
   });
 
   it("respects integer bitwidth and wraps around", () => {
@@ -490,6 +588,6 @@ describe("forge-expr-evaluator", () => {
     const expr = "8";
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
-    expect(result).toHaveProperty('error');
+    expect(result).toHaveProperty("error");
   });
 });
