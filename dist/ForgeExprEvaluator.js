@@ -4,8 +4,6 @@ exports.ForgeExprEvaluator = exports.SUPPORTED_BUILTINS = void 0;
 const AbstractParseTreeVisitor_1 = require("antlr4ts/tree/AbstractParseTreeVisitor");
 const lodash_1 = require("lodash");
 const ForgeExprFreeVariableFinder_1 = require("./ForgeExprFreeVariableFinder");
-const TRUE_LITERAL = "#t";
-const FALSE_LITERAL = "#f";
 ///// HELPER FUNCTIONS /////
 function isSingleValue(value) {
     return (typeof value === "string" ||
@@ -24,21 +22,6 @@ function isNumber(value) {
 function isString(value) {
     return typeof value === "string";
 }
-// function getBooleanValue(value: EvalResult): boolean {
-//   if (value === 'true' || value === TRUE_LITERAL || value === true) {
-//     return true;
-//   }
-//   if (value === 'false' || value === FALSE_LITERAL || value === false) {
-//     return false;
-//   }
-//   throw new Error('Expected value to be boolean');
-// }
-// function getNumberValue(value: EvalResult): number {
-//   if (typeof value === 'string') {
-//     return Number(value);
-//   }
-//   throw new Error('Expected value to be a number');
-// }
 function areTuplesEqual(a, b) {
     return a.length === b.length && a.every((val, i) => val === b[i]);
 }
@@ -253,7 +236,6 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return nextResult; // Prioritize non-default values
         if (isTupleArray(nextResult) && nextResult.length === 0)
             return aggregate;
-        // return aggregate.concat(nextResult); // Merge results when possible
         if (isSingleValue(aggregate)) {
             if (isSingleValue(nextResult)) {
                 return nextResult;
@@ -359,18 +341,11 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             throw new Error("**NOT IMPLEMENTING FOR NOW** Bind Expression");
         }
         if (ctx.quant()) {
-            // results = [];
-            // results.push([
-            //   '**UNIMPLEMENTED** Quantified Expression (`all`, `some`, `no`, etc.)'
-            // ]);
-            // TODO: add support for disj here
             if (ctx.quantDeclList() === undefined) {
                 throw new Error("Expected the quantifier to have a quantDeclList!");
             }
             const quantifierFreeVars = this.freeVariableFinder.visit(ctx);
             this.updateFreeVariables(quantifierFreeVars);
-            // console.log('quantifierFreeVars:', quantifierFreeVars.values());
-            // throw new Error('lets stop for now!');
             const varQuantifiedSets = this.getQuantDeclListValues(ctx.quantDeclList());
             const isDisjoint = ctx.DISJ_TOK() !== undefined;
             // NOTE: this doesn't support the situation in which blockOrBar is a block
@@ -755,8 +730,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
                         results = leftChildValue === rightChildValue;
                     }
-                    else if (isSingleValue(leftChildValue) &&
-                        isTupleArray(rightChildValue)) {
+                    else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
                         if (rightChildValue.length === 1 &&
                             rightChildValue[0].length === 1) {
                             results = leftChildValue === rightChildValue[0][0];
@@ -765,8 +739,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                             results = false;
                         }
                     }
-                    else if (isTupleArray(leftChildValue) &&
-                        isSingleValue(rightChildValue)) {
+                    else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
                         if (leftChildValue.length === 1 && leftChildValue[0].length === 1) {
                             results = leftChildValue[0][0] === rightChildValue;
                         }
@@ -774,8 +747,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                             results = false;
                         }
                     }
-                    else if (isTupleArray(leftChildValue) &&
-                        isTupleArray(rightChildValue)) {
+                    else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
                         results = areTupleArraysEqual(leftChildValue, rightChildValue);
                     }
                     else {
@@ -889,8 +861,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
                 return [[leftChildValue], [rightChildValue]];
             }
-            else if (isSingleValue(leftChildValue) &&
-                isTupleArray(rightChildValue)) {
+            else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
                 if (rightChildValue.length === 0) {
                     return leftChildValue;
                 }
@@ -899,8 +870,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 }
                 throw new Error("arity mismatch in set union!");
             }
-            else if (isTupleArray(leftChildValue) &&
-                isSingleValue(rightChildValue)) {
+            else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
                 if (leftChildValue.length === 0) {
                     return rightChildValue;
                 }
@@ -909,8 +879,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 }
                 throw new Error("arity mismatch in set union!");
             }
-            else if (isTupleArray(leftChildValue) &&
-                isTupleArray(rightChildValue)) {
+            else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
                 if (leftChildValue.length === 0 && rightChildValue.length === 0) {
                     return [];
                 }
@@ -939,8 +908,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 //console.log('returning leftChildValue:', leftChildValue);
                 return leftChildValue;
             }
-            else if (isSingleValue(leftChildValue) &&
-                isTupleArray(rightChildValue)) {
+            else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
                 if (rightChildValue.length === 0) {
                     return leftChildValue;
                 }
@@ -951,8 +919,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 }
                 throw new Error("arity mismatch in set difference!");
             }
-            else if (isTupleArray(leftChildValue) &&
-                isSingleValue(rightChildValue)) {
+            else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
                 if (leftChildValue.length === 0) {
                     return [];
                 }
@@ -961,8 +928,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 }
                 throw new Error("arity mismatch in set difference!");
             }
-            else if (isTupleArray(leftChildValue) &&
-                isTupleArray(rightChildValue)) {
+            else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
                 if (leftChildValue.length === 0) {
                     return [];
                 }
@@ -1016,8 +982,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
                 return leftChildValue === rightChildValue ? leftChildValue : [];
             }
-            else if (isSingleValue(leftChildValue) &&
-                isTupleArray(rightChildValue)) {
+            else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
                 if (rightChildValue.length === 0) {
                     return [];
                 }
@@ -1028,8 +993,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 }
                 throw new Error("arity mismatch in set intersection!");
             }
-            else if (isTupleArray(leftChildValue) &&
-                isSingleValue(rightChildValue)) {
+            else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
                 if (leftChildValue.length === 0) {
                     return [];
                 }
@@ -1040,8 +1004,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 }
                 throw new Error("arity mismatch in set intersection!");
             }
-            else if (isTupleArray(leftChildValue) &&
-                isTupleArray(rightChildValue)) {
+            else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
                 if (leftChildValue.length === 0 || rightChildValue.length === 0) {
                     return [];
                 }
@@ -1064,12 +1027,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const leftChildValue = this.visit(ctx.expr12());
             const rightChildValue = this.visit(ctx.expr13());
             // Ensure both values are tuple arrays
-            const leftTuples = isSingleValue(leftChildValue)
-                ? [[leftChildValue]]
-                : leftChildValue;
-            const rightTuples = isSingleValue(rightChildValue)
-                ? [[rightChildValue]]
-                : rightChildValue;
+            const leftTuples = isSingleValue(leftChildValue) ? [[leftChildValue]] : leftChildValue;
+            const rightTuples = isSingleValue(rightChildValue) ? [[rightChildValue]] : rightChildValue;
             if (!isTupleArray(leftTuples) || !isTupleArray(rightTuples)) {
                 throw new Error("Arrow operator operands must be tuple arrays or single values");
             }
@@ -1116,9 +1075,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             //console.log('insideBracesExprs:', insideBracesExprs);
             // check if it is a predicate that is being called
             //console.log('predicates:', this.predicates);
-            if (isSingleValue(beforeBracesExpr) &&
-                isString(beforeBracesExpr) &&
-                this.isPredicateName(beforeBracesExpr)) {
+            if (isSingleValue(beforeBracesExpr) && isString(beforeBracesExpr) && this.isPredicateName(beforeBracesExpr)) {
                 const predicate = this.getPredicate(beforeBracesExpr);
                 return this.callPredicate(predicate, insideBracesExprs);
             }
@@ -1227,12 +1184,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const afterDotExpr = this.visit(ctx.expr16());
             // console.log('beforeExpr:', beforeDotExpr);
             // console.log('afterExpr:', afterDotExpr);
-            const leftExpr = isSingleValue(beforeDotExpr)
-                ? [[beforeDotExpr]]
-                : beforeDotExpr;
-            const rightExpr = isSingleValue(afterDotExpr)
-                ? [[afterDotExpr]]
-                : afterDotExpr;
+            const leftExpr = isSingleValue(beforeDotExpr) ? [[beforeDotExpr]] : beforeDotExpr;
+            const rightExpr = isSingleValue(afterDotExpr) ? [[afterDotExpr]] : afterDotExpr;
             const result = [];
             leftExpr.forEach((leftTuple) => {
                 rightExpr.forEach((rightTuple) => {
@@ -1280,9 +1233,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         if (ctx.TILDE_TOK()) {
             // this flips the order of the elements in the tuples of a relation if
             // the relation has arity 2
-            if (isTupleArray(childrenResults) &&
-                childrenResults.length > 0 &&
-                childrenResults[0].length === 2) {
+            if (isTupleArray(childrenResults) && childrenResults.length > 0 && childrenResults[0].length === 2) {
                 return childrenResults.map((tuple) => [tuple[1], tuple[0]]);
             }
             throw new Error("expected the expression provided to ~ to have arity 2; bad arity received!");
@@ -1495,12 +1446,6 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         if (identifier === "false") {
             return false;
         }
-        //console.log('need to find an identifier:', identifier);
-        // //console.log(this.instanceData);
-        // temporary
-        // if (identifier === 'b') {
-        //   return '1';
-        // }
         // if this is the name of a pred (without args), call the predicate
         if (this.isPredicateName(identifier)) {
             const predicate = this.getPredicate(identifier);
@@ -1521,25 +1466,6 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 break; // can't go further back
             }
         }
-        // // if this is a var that has a value due to a quantDecl, get the value for
-        // // the current combination of the space being searched
-        // for (let i = this.quantDeclEnvironmentStack.length - 1; i >= 0; i--) {
-        //   const quantDeclEnv = this.quantDeclEnvironmentStack[i];
-        //   if (quantDeclEnv[identifier] !== undefined) {
-        //     return quantDeclEnv[identifier];
-        //   }
-        // }
-        // // if this is an arg to the pred being evaluated, return it
-        // const latestEnvironment =
-        //   this.environmentStack.length > 0
-        //     ? this.environmentStack[this.environmentStack.length - 1]
-        //     : undefined;
-        // if (
-        //   latestEnvironment !== undefined &&
-        //   latestEnvironment[identifier] !== undefined
-        // ) {
-        //   return latestEnvironment[identifier];
-        // }
         let result = undefined;
         // check if this is a type
         const typeNames = Object.keys(this.instanceData.types).map((key) => this.instanceData.types[key].id);
@@ -1602,10 +1528,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 return true;
             }
             if (typeof value === "string") {
-                return (value === "true" ||
-                    value === "#t" ||
-                    value === "false" ||
-                    value === "#f");
+                return (value === "true" || value === "#t" || value === "false" || value === "#f");
             }
             return false;
         };
@@ -1639,8 +1562,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return result;
         }
         // return identifier;
-        if (this.isPredicateName(identifier) ||
-            exports.SUPPORTED_BUILTINS.includes(identifier)) {
+        if (this.isPredicateName(identifier) || exports.SUPPORTED_BUILTINS.includes(identifier)) {
             return identifier;
         }
         throw new Error(`bad name ${identifier} referenced!`);
@@ -1650,9 +1572,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
         // of the qualName nonterminal
         //console.log('visiting qualName:', ctx.text);
         if (ctx.INT_TOK()) {
-            const intVals = this.instanceData.types.Int.atoms.map((atom) => [
-                Number(atom.id),
-            ]);
+            const intVals = this.instanceData.types.Int.atoms.map((atom) => [Number(atom.id)]);
             return intVals;
         }
         return this.visitChildren(ctx);

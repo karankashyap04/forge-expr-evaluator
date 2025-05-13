@@ -40,9 +40,6 @@ import {
 } from "./ForgeExprFreeVariableFinder";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 
-const TRUE_LITERAL = "#t";
-const FALSE_LITERAL = "#f";
-
 ///// DEFINING SOME USEFUL TYPES /////
 export type SingleValue = string | number | boolean;
 export type Tuple = SingleValue[];
@@ -77,23 +74,6 @@ function isNumber(value: EvalResult): value is number {
 function isString(value: EvalResult): value is string {
   return typeof value === "string";
 }
-
-// function getBooleanValue(value: EvalResult): boolean {
-//   if (value === 'true' || value === TRUE_LITERAL || value === true) {
-//     return true;
-//   }
-//   if (value === 'false' || value === FALSE_LITERAL || value === false) {
-//     return false;
-//   }
-//   throw new Error('Expected value to be boolean');
-// }
-
-// function getNumberValue(value: EvalResult): number {
-//   if (typeof value === 'string') {
-//     return Number(value);
-//   }
-//   throw new Error('Expected value to be a number');
-// }
 
 function areTuplesEqual(a: Tuple, b: Tuple): boolean {
   return a.length === b.length && a.every((val, i) => val === b[i]);
@@ -347,9 +327,7 @@ export class ForgeExprEvaluator
   }
 
   // helper function
-  private constructFreeVariableKey(
-    freeVarValues: Record<string, EvalResult>
-  ): string {
+  private constructFreeVariableKey(freeVarValues: Record<string, EvalResult>): string {
     const keys = Object.keys(freeVarValues);
     keys.sort(); // sort the keys to ensure consistent ordering
     return keys.map((key) => `${key}=${freeVarValues[key]}`).join("|");
@@ -364,13 +342,9 @@ export class ForgeExprEvaluator
   }
 
   // THIS SEEMS KINDA JANKY... IS THIS REALLY WHAT WE WANT??
-  protected aggregateResult(
-    aggregate: EvalResult,
-    nextResult: EvalResult
-  ): EvalResult {
+  protected aggregateResult(aggregate: EvalResult, nextResult: EvalResult): EvalResult {
     if (isTupleArray(aggregate) && aggregate.length === 0) return nextResult; // Prioritize non-default values
     if (isTupleArray(nextResult) && nextResult.length === 0) return aggregate;
-    // return aggregate.concat(nextResult); // Merge results when possible
     if (isSingleValue(aggregate)) {
       if (isSingleValue(nextResult)) {
         return nextResult;
@@ -482,20 +456,12 @@ export class ForgeExprEvaluator
       throw new Error("**NOT IMPLEMENTING FOR NOW** Bind Expression");
     }
     if (ctx.quant()) {
-      // results = [];
-      // results.push([
-      //   '**UNIMPLEMENTED** Quantified Expression (`all`, `some`, `no`, etc.)'
-      // ]);
-
-      // TODO: add support for disj here
       if (ctx.quantDeclList() === undefined) {
         throw new Error("Expected the quantifier to have a quantDeclList!");
       }
 
       const quantifierFreeVars = this.freeVariableFinder.visit(ctx);
       this.updateFreeVariables(quantifierFreeVars);
-      // console.log('quantifierFreeVars:', quantifierFreeVars.values());
-      // throw new Error('lets stop for now!');
 
       const varQuantifiedSets = this.getQuantDeclListValues(
         ctx.quantDeclList()!
@@ -944,10 +910,7 @@ export class ForgeExprEvaluator
         case "=":
           if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
             results = leftChildValue === rightChildValue;
-          } else if (
-            isSingleValue(leftChildValue) &&
-            isTupleArray(rightChildValue)
-          ) {
+          } else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
             if (
               rightChildValue.length === 1 &&
               rightChildValue[0].length === 1
@@ -956,56 +919,40 @@ export class ForgeExprEvaluator
             } else {
               results = false;
             }
-          } else if (
-            isTupleArray(leftChildValue) &&
-            isSingleValue(rightChildValue)
-          ) {
+          } else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
             if (leftChildValue.length === 1 && leftChildValue[0].length === 1) {
               results = leftChildValue[0][0] === rightChildValue;
             } else {
               results = false;
             }
-          } else if (
-            isTupleArray(leftChildValue) &&
-            isTupleArray(rightChildValue)
-          ) {
+          } else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
             results = areTupleArraysEqual(leftChildValue, rightChildValue);
           } else {
             // NOTE: we should never actually get here
-            throw new Error(
-              "unexpected error: equality operand is not a well defined forge value!"
-            );
+            throw new Error("unexpected error: equality operand is not a well defined forge value!");
           }
           break;
         case "<":
           if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
-            throw new Error(
-              `Expected the < operator to have 2 number operands, got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-            );
+            throw new Error(`Expected the < operator to have 2 number operands, got ${typeof leftChildValue} and ${typeof rightChildValue}!`);
           }
           results = leftChildValue < rightChildValue;
           break;
         case ">":
           if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
-            throw new Error(
-              "Expected the > operator to have 2 number operands!"
-            );
+            throw new Error("Expected the > operator to have 2 number operands!");
           }
           results = leftChildValue > rightChildValue;
           break;
         case "<=":
           if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
-            throw new Error(
-              "Expected the <= operator to have 2 number operands!"
-            );
+            throw new Error("Expected the <= operator to have 2 number operands!");
           }
           results = leftChildValue <= rightChildValue;
           break;
         case ">=":
           if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
-            throw new Error(
-              "Expected the >= operator to have 2 number operands!"
-            );
+            throw new Error("Expected the >= operator to have 2 number operands!");
           }
           results = leftChildValue >= rightChildValue;
           break;
@@ -1049,9 +996,7 @@ export class ForgeExprEvaluator
 
     if (toNegate) {
       if (!isBoolean(results)) {
-        throw new Error(
-          "Expected the negation operator to have a boolean operand!"
-        );
+        throw new Error("Expected the negation operator to have a boolean operand!");
       }
       return !results;
     }
@@ -1103,10 +1048,7 @@ export class ForgeExprEvaluator
       // should only work if arities are the same
       if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
         return [[leftChildValue], [rightChildValue]];
-      } else if (
-        isSingleValue(leftChildValue) &&
-        isTupleArray(rightChildValue)
-      ) {
+      } else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
         if (rightChildValue.length === 0) {
           return leftChildValue;
         }
@@ -1114,10 +1056,7 @@ export class ForgeExprEvaluator
           return deduplicateTuples([[leftChildValue], ...rightChildValue]);
         }
         throw new Error("arity mismatch in set union!");
-      } else if (
-        isTupleArray(leftChildValue) &&
-        isSingleValue(rightChildValue)
-      ) {
+      } else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
         if (leftChildValue.length === 0) {
           return rightChildValue;
         }
@@ -1125,10 +1064,7 @@ export class ForgeExprEvaluator
           return deduplicateTuples([...leftChildValue, [rightChildValue]]);
         }
         throw new Error("arity mismatch in set union!");
-      } else if (
-        isTupleArray(leftChildValue) &&
-        isTupleArray(rightChildValue)
-      ) {
+      } else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
         if (leftChildValue.length === 0 && rightChildValue.length === 0) {
           return [];
         }
@@ -1142,9 +1078,7 @@ export class ForgeExprEvaluator
           return deduplicateTuples([...leftChildValue, ...rightChildValue]);
         }
       } else {
-        throw new Error(
-          "unexpected error: expressions added are not well defined!"
-        );
+        throw new Error("unexpected error: expressions added are not well defined!");
       }
     }
     if (ctx.MINUS_TOK()) {
@@ -1158,10 +1092,7 @@ export class ForgeExprEvaluator
         }
         //console.log('returning leftChildValue:', leftChildValue);
         return leftChildValue;
-      } else if (
-        isSingleValue(leftChildValue) &&
-        isTupleArray(rightChildValue)
-      ) {
+      } else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
         if (rightChildValue.length === 0) {
           return leftChildValue;
         }
@@ -1171,10 +1102,7 @@ export class ForgeExprEvaluator
             : leftChildValue;
         }
         throw new Error("arity mismatch in set difference!");
-      } else if (
-        isTupleArray(leftChildValue) &&
-        isSingleValue(rightChildValue)
-      ) {
+      } else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
         if (leftChildValue.length === 0) {
           return [];
         }
@@ -1182,10 +1110,7 @@ export class ForgeExprEvaluator
           return leftChildValue.filter((tuple) => tuple[0] !== rightChildValue);
         }
         throw new Error("arity mismatch in set difference!");
-      } else if (
-        isTupleArray(leftChildValue) &&
-        isTupleArray(rightChildValue)
-      ) {
+      } else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
         if (leftChildValue.length === 0) {
           return [];
         }
@@ -1194,16 +1119,10 @@ export class ForgeExprEvaluator
         }
         if (leftChildValue[0].length === rightChildValue[0].length) {
           return leftChildValue.filter(
-            (tuple) =>
-              !rightChildValue.some((rightTuple) =>
-                areTuplesEqual(tuple, rightTuple)
-              )
-          );
+            (tuple) => !rightChildValue.some((rightTuple) => areTuplesEqual(tuple, rightTuple)));
         }
       } else {
-        throw new Error(
-          "unexpected error: expressions subtracted are not well defined!"
-        );
+        throw new Error("unexpected error: expressions subtracted are not well defined!");
       }
     }
 
@@ -1217,9 +1136,7 @@ export class ForgeExprEvaluator
 
     if (ctx.CARD_TOK()) {
       if (!isTupleArray(childrenResults)) {
-        throw new Error(
-          "The cardinal operator must be applied to a set of tuples!"
-        );
+        throw new Error("The cardinal operator must be applied to a set of tuples!");
       }
       return bitwidthWraparound(childrenResults.length, this.bitwidth);
     }
@@ -1233,9 +1150,7 @@ export class ForgeExprEvaluator
 
     if (ctx.PPLUS_TOK()) {
       if (ctx.expr10() === undefined || ctx.expr11() === undefined) {
-        throw new Error(
-          "Expected the pplus operator to have 2 operands of the right type!"
-        );
+        throw new Error("Expected the pplus operator to have 2 operands of the right type!");
       }
       const leftChildValue = this.visit(ctx.expr10()!);
       const rightChildValue = this.visit(ctx.expr11()!);
@@ -1250,9 +1165,7 @@ export class ForgeExprEvaluator
 
     if (ctx.AMP_TOK()) {
       if (ctx.expr11() === undefined || ctx.expr12() === undefined) {
-        throw new Error(
-          "Expected the amp operator to have 2 operands of the right type!"
-        );
+        throw new Error("Expected the amp operator to have 2 operands of the right type!");
       }
       const leftChildValue = this.visit(ctx.expr11()!);
       const rightChildValue = this.visit(ctx.expr12()!);
@@ -1260,10 +1173,7 @@ export class ForgeExprEvaluator
       // should only work if arities are the same
       if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
         return leftChildValue === rightChildValue ? leftChildValue : [];
-      } else if (
-        isSingleValue(leftChildValue) &&
-        isTupleArray(rightChildValue)
-      ) {
+      } else if (isSingleValue(leftChildValue) && isTupleArray(rightChildValue)) {
         if (rightChildValue.length === 0) {
           return [];
         }
@@ -1273,10 +1183,7 @@ export class ForgeExprEvaluator
             : [];
         }
         throw new Error("arity mismatch in set intersection!");
-      } else if (
-        isTupleArray(leftChildValue) &&
-        isSingleValue(rightChildValue)
-      ) {
+      } else if (isTupleArray(leftChildValue) && isSingleValue(rightChildValue)) {
         if (leftChildValue.length === 0) {
           return [];
         }
@@ -1286,24 +1193,17 @@ export class ForgeExprEvaluator
             : [];
         }
         throw new Error("arity mismatch in set intersection!");
-      } else if (
-        isTupleArray(leftChildValue) &&
-        isTupleArray(rightChildValue)
-      ) {
+      } else if (isTupleArray(leftChildValue) && isTupleArray(rightChildValue)) {
         if (leftChildValue.length === 0 || rightChildValue.length === 0) {
           return [];
         }
         if (leftChildValue[0].length === rightChildValue[0].length) {
           return leftChildValue.filter((tuple) =>
-            rightChildValue.some((rightTuple) =>
-              areTuplesEqual(tuple, rightTuple)
-            )
+            rightChildValue.some((rightTuple) => areTuplesEqual(tuple, rightTuple))
           );
         }
       } else {
-        throw new Error(
-          "unexpected error: expressions intersected are not well defined!"
-        );
+        throw new Error("unexpected error: expressions intersected are not well defined!");
       }
     }
 
@@ -1315,25 +1215,17 @@ export class ForgeExprEvaluator
 
     if (ctx.arrowOp()) {
       if (ctx.expr12() === undefined || ctx.expr13() === undefined) {
-        throw new Error(
-          "Expected the arrow operator to have 2 operands of the right type!"
-        );
+        throw new Error("Expected the arrow operator to have 2 operands of the right type!");
       }
       const leftChildValue = this.visit(ctx.expr12()!);
       const rightChildValue = this.visit(ctx.expr13()!);
 
       // Ensure both values are tuple arrays
-      const leftTuples = isSingleValue(leftChildValue)
-        ? [[leftChildValue]]
-        : leftChildValue;
-      const rightTuples = isSingleValue(rightChildValue)
-        ? [[rightChildValue]]
-        : rightChildValue;
+      const leftTuples = isSingleValue(leftChildValue) ? [[leftChildValue]] : leftChildValue;
+      const rightTuples = isSingleValue(rightChildValue) ? [[rightChildValue]] : rightChildValue;
 
       if (!isTupleArray(leftTuples) || !isTupleArray(rightTuples)) {
-        throw new Error(
-          "Arrow operator operands must be tuple arrays or single values"
-        );
+        throw new Error("Arrow operator operands must be tuple arrays or single values");
       }
 
       // Compute the Cartesian product
@@ -1391,11 +1283,7 @@ export class ForgeExprEvaluator
 
       // check if it is a predicate that is being called
       //console.log('predicates:', this.predicates);
-      if (
-        isSingleValue(beforeBracesExpr) &&
-        isString(beforeBracesExpr) &&
-        this.isPredicateName(beforeBracesExpr)
-      ) {
+      if (isSingleValue(beforeBracesExpr) && isString(beforeBracesExpr) && this.isPredicateName(beforeBracesExpr)) {
         const predicate = this.getPredicate(beforeBracesExpr);
         return this.callPredicate(predicate, insideBracesExprs);
       }
@@ -1410,16 +1298,12 @@ export class ForgeExprEvaluator
           let arg1: number;
           if (isArray(insideBracesExprs[0])) {
             if (!isNumber(insideBracesExprs[0][0])) {
-              throw new Error(
-                "Expected a number for the first argument of add"
-              );
+              throw new Error("Expected a number for the first argument of add");
             }
             arg1 = insideBracesExprs[0][0];
           } else {
             if (!isNumber(insideBracesExprs[0])) {
-              throw new Error(
-                "Expected a number for the first argument of add"
-              );
+              throw new Error("Expected a number for the first argument of add");
             }
             arg1 = insideBracesExprs[0];
           }
@@ -1427,16 +1311,12 @@ export class ForgeExprEvaluator
           let arg2: number;
           if (isArray(insideBracesExprs[1])) {
             if (!isNumber(insideBracesExprs[1][0])) {
-              throw new Error(
-                "Expected a number for the second argument of add"
-              );
+              throw new Error("Expected a number for the second argument of add");
             }
             arg2 = insideBracesExprs[1][0];
           } else {
             if (!isNumber(insideBracesExprs[1])) {
-              throw new Error(
-                "Expected a number for the second argument of add"
-              );
+              throw new Error("Expected a number for the second argument of add");
             }
             arg2 = insideBracesExprs[1];
           }
@@ -1454,16 +1334,12 @@ export class ForgeExprEvaluator
           let arg1: number;
           if (isArray(insideBracesExprs[0])) {
             if (!isNumber(insideBracesExprs[0][0])) {
-              throw new Error(
-                "Expected a number for the first argument of subtract"
-              );
+              throw new Error("Expected a number for the first argument of subtract");
             }
             arg1 = insideBracesExprs[0][0];
           } else {
             if (!isNumber(insideBracesExprs[0])) {
-              throw new Error(
-                "Expected a number for the first argument of subtract"
-              );
+              throw new Error("Expected a number for the first argument of subtract");
             }
             arg1 = insideBracesExprs[0];
           }
@@ -1471,16 +1347,12 @@ export class ForgeExprEvaluator
           let arg2: number;
           if (isArray(insideBracesExprs[1])) {
             if (!isNumber(insideBracesExprs[1][0])) {
-              throw new Error(
-                "Expected a number for the second argument of subtract"
-              );
+              throw new Error("Expected a number for the second argument of subtract");
             }
             arg2 = insideBracesExprs[1][0];
           } else {
             if (!isNumber(insideBracesExprs[1])) {
-              throw new Error(
-                "Expected a number for the second argument of subtract"
-              );
+              throw new Error("Expected a number for the second argument of subtract");
             }
             arg2 = insideBracesExprs[1];
           }
@@ -1516,21 +1388,15 @@ export class ForgeExprEvaluator
 
     if (ctx.DOT_TOK()) {
       if (ctx.expr15() === undefined || ctx.expr16() === undefined) {
-        throw new Error(
-          "Expected the dot operator to have 2 operands of the right type!"
-        );
+        throw new Error("Expected the dot operator to have 2 operands of the right type!");
       }
       const beforeDotExpr = this.visit(ctx.expr15()!);
       const afterDotExpr = this.visit(ctx.expr16()!);
       // console.log('beforeExpr:', beforeDotExpr);
       // console.log('afterExpr:', afterDotExpr);
 
-      const leftExpr = isSingleValue(beforeDotExpr)
-        ? [[beforeDotExpr]]
-        : beforeDotExpr;
-      const rightExpr = isSingleValue(afterDotExpr)
-        ? [[afterDotExpr]]
-        : afterDotExpr;
+      const leftExpr = isSingleValue(beforeDotExpr) ? [[beforeDotExpr]] : beforeDotExpr;
+      const rightExpr = isSingleValue(afterDotExpr) ? [[afterDotExpr]] : afterDotExpr;
 
       const result: Tuple[] = [];
       leftExpr.forEach((leftTuple) => {
@@ -1591,24 +1457,16 @@ export class ForgeExprEvaluator
     if (ctx.TILDE_TOK()) {
       // this flips the order of the elements in the tuples of a relation if
       // the relation has arity 2
-      if (
-        isTupleArray(childrenResults) &&
-        childrenResults.length > 0 &&
-        childrenResults[0].length === 2
-      ) {
+      if (isTupleArray(childrenResults) && childrenResults.length > 0 && childrenResults[0].length === 2) {
         return childrenResults.map((tuple) => [tuple[1], tuple[0]]);
       }
-      throw new Error(
-        "expected the expression provided to ~ to have arity 2; bad arity received!"
-      );
+      throw new Error("expected the expression provided to ~ to have arity 2; bad arity received!");
     }
     if (ctx.EXP_TOK()) {
       if (isTupleArray(childrenResults)) {
         return transitiveClosure(childrenResults);
       }
-      throw new Error(
-        "transitive closure ^ expected a relation of arity 2, not a singular value!"
-      );
+      throw new Error("transitive closure ^ expected a relation of arity 2, not a singular value!");
     }
     if (ctx.STAR_TOK()) {
       results.push(["**UNIMPLEMENTED** *"]);
@@ -1688,9 +1546,7 @@ export class ForgeExprEvaluator
         const maxValue = Math.pow(2, this.bitwidth - 1) - 1;
         const minValue = -1 * Math.pow(2, this.bitwidth - 1);
         if (value > maxValue || value < minValue) {
-          throw new Error(
-            `Constant ${value} is outside the bitwidth of ${this.bitwidth}!`
-          );
+          throw new Error(`Constant ${value} is outside the bitwidth of ${this.bitwidth}!`);
         }
         return value;
       }
@@ -1700,9 +1556,7 @@ export class ForgeExprEvaluator
       return this.visitQualName(ctx.qualName()!);
     }
     if (ctx.AT_TOK()) {
-      throw new Error(
-        "`@` operator is Alloy specific; it is not supported by Forge!"
-      );
+      throw new Error("`@` operator is Alloy specific; it is not supported by Forge!");
     }
     if (ctx.BACKQUOTE_TOK()) {
       const name = this.visitChildren(ctx);
@@ -1712,9 +1566,7 @@ export class ForgeExprEvaluator
       return results;
     }
     if (ctx.THIS_TOK()) {
-      throw new Error(
-        "`this` is Alloy specific; it is not supported by Forge!"
-      );
+      throw new Error("`this` is Alloy specific; it is not supported by Forge!");
     }
     if (ctx.LEFT_CURLY_TOK()) {
       // first, we need to get the variables from the quantDeclList
@@ -1739,9 +1591,7 @@ export class ForgeExprEvaluator
         blockOrBar.BAR_TOK() === undefined ||
         blockOrBar.expr() === undefined
       ) {
-        throw new Error(
-          "expected a bar followed by an expr in the set comprehension!"
-        );
+        throw new Error("expected a bar followed by an expr in the set comprehension!");
       }
       const barExpr = blockOrBar.expr()!;
 
@@ -1772,9 +1622,7 @@ export class ForgeExprEvaluator
         // now, we want to evaluate the barExpr
         const barExprValue = this.visit(barExpr);
         if (!isBoolean(barExprValue)) {
-          throw new Error(
-            "Expected the expression after the bar to be a boolean value!"
-          );
+          throw new Error("Expected the expression after the bar to be a boolean value!");
         }
         if (barExprValue) {
           // will error if not boolean val, which we want
@@ -1848,12 +1696,6 @@ export class ForgeExprEvaluator
       return false;
     }
 
-    //console.log('need to find an identifier:', identifier);
-    // //console.log(this.instanceData);
-    // temporary
-    // if (identifier === 'b') {
-    //   return '1';
-    // }
     // if this is the name of a pred (without args), call the predicate
     if (this.isPredicateName(identifier)) {
       const predicate = this.getPredicate(identifier);
@@ -1876,27 +1718,6 @@ export class ForgeExprEvaluator
         break; // can't go further back
       }
     }
-
-    // // if this is a var that has a value due to a quantDecl, get the value for
-    // // the current combination of the space being searched
-    // for (let i = this.quantDeclEnvironmentStack.length - 1; i >= 0; i--) {
-    //   const quantDeclEnv = this.quantDeclEnvironmentStack[i];
-    //   if (quantDeclEnv[identifier] !== undefined) {
-    //     return quantDeclEnv[identifier];
-    //   }
-    // }
-
-    // // if this is an arg to the pred being evaluated, return it
-    // const latestEnvironment =
-    //   this.environmentStack.length > 0
-    //     ? this.environmentStack[this.environmentStack.length - 1]
-    //     : undefined;
-    // if (
-    //   latestEnvironment !== undefined &&
-    //   latestEnvironment[identifier] !== undefined
-    // ) {
-    //   return latestEnvironment[identifier];
-    // }
 
     let result: EvalResult | undefined = undefined;
 
@@ -1974,12 +1795,7 @@ export class ForgeExprEvaluator
         return true;
       }
       if (typeof value === "string") {
-        return (
-          value === "true" ||
-          value === "#t" ||
-          value === "false" ||
-          value === "#f"
-        );
+        return (value === "true" || value === "#t" || value === "false" || value === "#f");
       }
       return false;
     };
@@ -2013,9 +1829,7 @@ export class ForgeExprEvaluator
           )
         );
         relationAtoms = relationAtoms.map((tuple) =>
-          tuple.map((value) =>
-            isConvertibleToBoolean(value) ? convertToBoolean(value) : value
-          )
+          tuple.map((value) => isConvertibleToBoolean(value) ? convertToBoolean(value) : value)
         );
         return relationAtoms;
       }
@@ -2028,18 +1842,13 @@ export class ForgeExprEvaluator
         )
       );
       result = result.map((tuple) =>
-        tuple.map((value) =>
-          isConvertibleToBoolean(value) ? convertToBoolean(value) : value
-        )
+        tuple.map((value) => isConvertibleToBoolean(value) ? convertToBoolean(value) : value)
       );
       return result;
     }
 
     // return identifier;
-    if (
-      this.isPredicateName(identifier) ||
-      SUPPORTED_BUILTINS.includes(identifier)
-    ) {
+    if (this.isPredicateName(identifier) || SUPPORTED_BUILTINS.includes(identifier)) {
       return identifier;
     }
     throw new Error(`bad name ${identifier} referenced!`);
@@ -2051,9 +1860,7 @@ export class ForgeExprEvaluator
     //console.log('visiting qualName:', ctx.text);
 
     if (ctx.INT_TOK()) {
-      const intVals = this.instanceData.types.Int.atoms.map((atom: Atom) => [
-        Number(atom.id),
-      ]);
+      const intVals = this.instanceData.types.Int.atoms.map((atom: Atom) => [Number(atom.id)]);
       return intVals;
     }
 

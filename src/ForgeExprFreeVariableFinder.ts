@@ -216,16 +216,6 @@ export class ForgeExprFreeVariableFinder
       } else {
         allFreeVars = this.visit(blockOrBar.expr()!);
       }
-      // // remove the variables bound by the quantifier from the result
-      // for (const [contextNode, variables] of allFreeVars.entries()) {
-      //   const filteredVariables = new Set<string>();
-      //   for (const variable of variables) {
-      //     if (!quantDeclListVars.has(variable)) {
-      //       filteredVariables.add(variable);
-      //     }
-      //   }
-      //   allFreeVars.set(contextNode, filteredVariables);
-      // }
 
       // the context node for the quantifier as a whole shouldn't have _all_ of these
       // free vars; specifically, it should not include the vars that are being
@@ -373,17 +363,6 @@ export class ForgeExprFreeVariableFinder
       } else {
         allFreeVars = this.visit(blockOrBar.expr()!);
       }
-      // // remove the variables bound by the quantifier from the result
-      // for (const [contextNode, variables] of allFreeVars.entries()) {
-      //   const filteredVariables = new Set<string>();
-      //   for (const variable of variables) {
-      //     if (!quantDeclListVars.has(variable)) {
-      //       filteredVariables.add(variable);
-      //     }
-      //   }
-      //   allFreeVars.set(contextNode, filteredVariables);
-      // }
-      // return this.addCtxToFreeVariableMap(ctx, allFreeVars);
 
       // the context node for the quantifier as a whole shouldn't have _all_ of these
       // free vars; specifically, it should not include the vars that are being
