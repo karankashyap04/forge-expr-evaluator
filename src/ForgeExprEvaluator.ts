@@ -85,7 +85,7 @@ function isTupleArraySubset(a: Tuple[], b: Tuple[]): boolean {
   );
 }
 
-function areTupleArraysEqual(a: Tuple[], b: Tuple[]): boolean {
+export function areTupleArraysEqual(a: Tuple[], b: Tuple[]): boolean {
   if (a.length !== b.length) {
     return false;
   }
@@ -247,10 +247,7 @@ export class ForgeExprEvaluator
   }
 
   // helper function
-  private callPredicate(
-    predicate: Predicate,
-    evaluatedArgs: EvalResult
-  ): EvalResult {
+  private callPredicate(predicate: Predicate, evaluatedArgs: EvalResult): EvalResult {
     //console.log('trying to call predicate:', predicate.name);
     // check if the expected number of args has been provided
     const expectedArgs = predicate.args ? predicate.args.length : 0;
@@ -339,6 +336,29 @@ export class ForgeExprEvaluator
       this.cachedResults.set(ctx, new Map());
     }
     this.cachedResults.get(ctx)!.set(freeVarsKey, result);
+  }
+
+  // helper function
+  private getIden(): Tuple[] {
+    const instanceTypes = this.instanceData.types;
+    const result: Tuple[] = [];
+    for (const key in instanceTypes) {
+      const typeAtoms = instanceTypes[key].atoms;
+      typeAtoms.forEach((atom) => {
+        let value: SingleValue = atom.id;
+        // do some type conversions so we don't return a string if the value
+        // is a number or boolean
+        if (!isNaN(Number(value))) { // check if it's a number
+          value = Number(value);
+        } else if (value == "true" || value === "#t") {
+          value = true;
+        } else if (value == "false" || value === "#f") {
+          value = false;
+        }
+        result.push([value, value]);
+      });
+    }
+    return result;
   }
 
   // THIS SEEMS KINDA JANKY... IS THIS REALLY WHAT WE WANT??
@@ -1468,12 +1488,12 @@ export class ForgeExprEvaluator
       }
       throw new Error("transitive closure ^ expected a relation of arity 2, not a singular value!");
     }
-    if (ctx.STAR_TOK()) {
-      results.push(["**UNIMPLEMENTED** *"]);
-      // TODO: we need to implement * using childrenResults
-      //       and then return the result
-      //       just returning results here for now
-      return results;
+    if (ctx.STAR_TOK()) { // reflexive transitive closure
+      if (isTupleArray(childrenResults)) {
+        const transitiveClosureResult = transitiveClosure(childrenResults);
+        const idenResult = this.getIden();
+        return deduplicateTuples([...idenResult, ...transitiveClosureResult]);
+      }
     }
 
     return childrenResults;
