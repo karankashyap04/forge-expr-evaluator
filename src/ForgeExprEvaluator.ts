@@ -1904,7 +1904,7 @@ export class ForgeExprEvaluator
 
 
 
-    if(!isSingleValue(args) || !isNumber(args) {
+    if(!isSingleValue(args) || !isNumber(args)) {
       throw new Error(`Expected 1 argument for ${operation} that evaluates to a number.`);
     }
 
@@ -1917,7 +1917,7 @@ export class ForgeExprEvaluator
     if (operation === "abs") {
       let res = Math.abs(wrappedAround);
       // Now adjust to the bitwidth
-      return wrappedAround;
+      return res;
     }
     else if (operation === "sign") {
       if (wrappedAround > 0) {
