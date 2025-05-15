@@ -61,4 +61,5 @@ export declare class ForgeExprEvaluator extends AbstractParseTreeVisitor<EvalRes
     visitExprList(ctx: ExprListContext): EvalResult;
     visitName(ctx: NameContext): EvalResult;
     visitQualName(ctx: QualNameContext): EvalResult;
+    private evaluateBinaryOperation;
 }
