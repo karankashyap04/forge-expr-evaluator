@@ -190,7 +190,13 @@ function bitwidthWraparound(value: number, bitwidth: number): number {
 
 // this is a list of forge builtin functions we currently support; add to this
 // list as we support more
-export const SUPPORTED_BUILTINS = ["add", "subtract", "multiply", "divide", "remainder"];
+
+const SUPPORTED_BINARY_BUILTINS = ["add", "subtract", "multiply", "divide", "remainder"];
+const SUPPORTED_UNARY_BUILTINS :string[] = ["abs", "sign"];
+
+export const SUPPORTED_BUILTINS = SUPPORTED_BINARY_BUILTINS.concat(
+  SUPPORTED_UNARY_BUILTINS
+);
 
 /**
  * A recursive evaluator for Forge expressions.
@@ -1309,12 +1315,13 @@ export class ForgeExprEvaluator
       }
 
       // support for some forge-native functions:
-      if (beforeBracesExpr === "add" || 
-          beforeBracesExpr === "subtract" || 
-          beforeBracesExpr === "multiply" || 
-          beforeBracesExpr === "divide" || 
-          beforeBracesExpr === "remainder") {
-        return this.evaluateBinaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
+      if (isString(beforeBracesExpr)){
+        if(SUPPORTED_BINARY_BUILTINS.includes(beforeBracesExpr)) {
+          return this.evaluateBinaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
+        }
+        else if(SUPPORTED_UNARY_BUILTINS.includes(beforeBracesExpr)) {
+          return this.evaluateUnaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
+        }
       }
 
       if (isTupleArray(beforeBracesExpr)) {
@@ -1824,7 +1831,7 @@ export class ForgeExprEvaluator
   }
 
   private evaluateBinaryOperation(
-    operation: "add" | "subtract" | "multiply" | "divide" | "remainder",
+    operation: typeof SUPPORTED_BINARY_BUILTINS[number],
     args: EvalResult,
     bitwidth: number
   ): number {
@@ -1887,5 +1894,41 @@ export class ForgeExprEvaluator
 
     // Apply bitwidth wraparound
     return bitwidthWraparound(result, bitwidth);
+  }
+
+  private evaluateUnaryOperation(
+    operation: typeof SUPPORTED_UNARY_BUILTINS[number],
+    args: EvalResult,
+    bitwidth: number
+  ): number {
+
+
+
+    if(!isSingleValue(args) || !isNumber(args) {
+      throw new Error(`Expected 1 argument for ${operation} that evaluates to a number.`);
+    }
+
+    let wrappedAround = bitwidthWraparound(args, bitwidth);
+
+    // Possible unary operations:
+    //abs[]: returns the absolute value of value
+    //sign[]: returns 1 if value is > 0, 0 if value is 0, and -1 if value is < 0
+
+    if (operation === "abs") {
+      let res = Math.abs(wrappedAround);
+      // Now adjust to the bitwidth
+      return wrappedAround;
+    }
+    else if (operation === "sign") {
+      if (wrappedAround > 0) {
+        return 1;
+      } else if (wrappedAround < 0) {
+        return -1;
+      } else {
+        return 0;
+      }
+    } else {
+      throw new Error(`Unsupported operation: ${operation}`);
+    }
   }
 }
