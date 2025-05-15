@@ -190,7 +190,7 @@ function bitwidthWraparound(value: number, bitwidth: number): number {
 
 // this is a list of forge builtin functions we currently support; add to this
 // list as we support more
-export const SUPPORTED_BUILTINS = ["add", "subtract", "multiply"];
+export const SUPPORTED_BUILTINS = ["add", "subtract", "multiply", "divide"];
 
 /**
  * A recursive evaluator for Forge expressions.
@@ -1414,6 +1414,47 @@ export class ForgeExprEvaluator
 
           // Perform multiplication with wraparound
           return bitwidthWraparound(arg1 * arg2, this.bitwidth);
+        }
+      }
+
+      // divide
+      if (beforeBracesExpr === "divide") {
+        if (isSingleValue(insideBracesExprs)) {
+          throw new Error("expected 2 arguments for divide");
+        } else {
+          let arg1: number;
+          if (isArray(insideBracesExprs[0])) {
+            if (!isNumber(insideBracesExprs[0][0])) {
+              throw new Error("Expected a number for the first argument of divide");
+            }
+            arg1 = insideBracesExprs[0][0];
+          } else {
+            if (!isNumber(insideBracesExprs[0])) {
+              throw new Error("Expected a number for the first argument of divide");
+            }
+            arg1 = insideBracesExprs[0];
+          }
+
+          let arg2: number;
+          if (isArray(insideBracesExprs[1])) {
+            if (!isNumber(insideBracesExprs[1][0])) {
+              throw new Error("Expected a number for the second argument of divide");
+            }
+            arg2 = insideBracesExprs[1][0];
+          } else {
+            if (!isNumber(insideBracesExprs[1])) {
+              throw new Error("Expected a number for the second argument of divide");
+            }
+            arg2 = insideBracesExprs[1];
+          }
+
+          // Handle division by zero
+          if (arg2 === 0) {
+            throw new Error("Division by zero is not allowed");
+          }
+
+          // Perform division with wraparound
+          return bitwidthWraparound(Math.floor(arg1 / arg2), this.bitwidth);
         }
       }
 
