@@ -190,7 +190,7 @@ function bitwidthWraparound(value: number, bitwidth: number): number {
 
 // this is a list of forge builtin functions we currently support; add to this
 // list as we support more
-export const SUPPORTED_BUILTINS = ["add", "subtract", "multiply", "divide"];
+export const SUPPORTED_BUILTINS = ["add", "subtract", "multiply", "divide", "remainder"];
 
 /**
  * A recursive evaluator for Forge expressions.
@@ -1309,194 +1309,12 @@ export class ForgeExprEvaluator
       }
 
       // support for some forge-native functions:
-      // add
-      if (beforeBracesExpr === "add") {
-        if (isSingleValue(insideBracesExprs)) {
-          throw new Error("expected 2 arguments for add");
-        } else {
-          // const arg1 = getNumberValue(insideBracesExprs[0][0]);
-          let arg1: number;
-          if (isArray(insideBracesExprs[0])) {
-            if (!isNumber(insideBracesExprs[0][0])) {
-              throw new Error("Expected a number for the first argument of add");
-            }
-            arg1 = insideBracesExprs[0][0];
-          } else {
-            if (!isNumber(insideBracesExprs[0])) {
-              throw new Error("Expected a number for the first argument of add");
-            }
-            arg1 = insideBracesExprs[0];
-          }
-          // const arg2 = getNumberValue(insideBracesExprs[1][0]);
-          let arg2: number;
-          if (isArray(insideBracesExprs[1])) {
-            if (!isNumber(insideBracesExprs[1][0])) {
-              throw new Error("Expected a number for the second argument of add");
-            }
-            arg2 = insideBracesExprs[1][0];
-          } else {
-            if (!isNumber(insideBracesExprs[1])) {
-              throw new Error("Expected a number for the second argument of add");
-            }
-            arg2 = insideBracesExprs[1];
-          }
-          // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
-          return bitwidthWraparound(arg1 + arg2, this.bitwidth);
-        }
-      }
-
-      // subtract
-      if (beforeBracesExpr === "subtract") {
-        if (isSingleValue(insideBracesExprs)) {
-          throw new Error("expected 2 arguments for subtract");
-        } else {
-          // const arg1 = getNumberValue(insideBracesExprs[0][0]);
-          let arg1: number;
-          if (isArray(insideBracesExprs[0])) {
-            if (!isNumber(insideBracesExprs[0][0])) {
-              throw new Error("Expected a number for the first argument of subtract");
-            }
-            arg1 = insideBracesExprs[0][0];
-          } else {
-            if (!isNumber(insideBracesExprs[0])) {
-              throw new Error("Expected a number for the first argument of subtract");
-            }
-            arg1 = insideBracesExprs[0];
-          }
-          // const arg2 = getNumberValue(insideBracesExprs[1][0]);
-          let arg2: number;
-          if (isArray(insideBracesExprs[1])) {
-            if (!isNumber(insideBracesExprs[1][0])) {
-              throw new Error("Expected a number for the second argument of subtract");
-            }
-            arg2 = insideBracesExprs[1][0];
-          } else {
-            if (!isNumber(insideBracesExprs[1])) {
-              throw new Error("Expected a number for the second argument of subtract");
-            }
-            arg2 = insideBracesExprs[1];
-          }
-          // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
-          return bitwidthWraparound(arg1 - arg2, this.bitwidth);
-        }
-      }
-
-      // multiply
-      if (beforeBracesExpr === "multiply") {
-        if (isSingleValue(insideBracesExprs)) {
-          throw new Error("expected 2 arguments for multiply");
-        } else {
-          let arg1: number;
-          if (isArray(insideBracesExprs[0])) {
-            if (!isNumber(insideBracesExprs[0][0])) {
-              throw new Error("Expected a number for the first argument of multiply");
-            }
-            arg1 = insideBracesExprs[0][0];
-          } else {
-            if (!isNumber(insideBracesExprs[0])) {
-              throw new Error("Expected a number for the first argument of multiply");
-            }
-            arg1 = insideBracesExprs[0];
-          }
-
-          let arg2: number;
-          if (isArray(insideBracesExprs[1])) {
-            if (!isNumber(insideBracesExprs[1][0])) {
-              throw new Error("Expected a number for the second argument of multiply");
-            }
-            arg2 = insideBracesExprs[1][0];
-          } else {
-            if (!isNumber(insideBracesExprs[1])) {
-              throw new Error("Expected a number for the second argument of multiply");
-            }
-            arg2 = insideBracesExprs[1];
-          }
-
-          // Perform multiplication with wraparound
-          return bitwidthWraparound(arg1 * arg2, this.bitwidth);
-        }
-      }
-
-      // divide
-      if (beforeBracesExpr === "divide") {
-        if (isSingleValue(insideBracesExprs)) {
-          throw new Error("expected 2 arguments for divide");
-        } else {
-          let arg1: number;
-          if (isArray(insideBracesExprs[0])) {
-            if (!isNumber(insideBracesExprs[0][0])) {
-              throw new Error("Expected a number for the first argument of divide");
-            }
-            arg1 = insideBracesExprs[0][0];
-          } else {
-            if (!isNumber(insideBracesExprs[0])) {
-              throw new Error("Expected a number for the first argument of divide");
-            }
-            arg1 = insideBracesExprs[0];
-          }
-
-          let arg2: number;
-          if (isArray(insideBracesExprs[1])) {
-            if (!isNumber(insideBracesExprs[1][0])) {
-              throw new Error("Expected a number for the second argument of divide");
-            }
-            arg2 = insideBracesExprs[1][0];
-          } else {
-            if (!isNumber(insideBracesExprs[1])) {
-              throw new Error("Expected a number for the second argument of divide");
-            }
-            arg2 = insideBracesExprs[1];
-          }
-
-          // Handle division by zero
-          if (arg2 === 0) {
-            throw new Error("Division by zero is not allowed");
-          }
-
-          // Perform division with wraparound
-          return bitwidthWraparound(Math.floor(arg1 / arg2), this.bitwidth);
-        }
-      }
-
-      // remainder
-      if (beforeBracesExpr === "remainder") {
-        if (isSingleValue(insideBracesExprs)) {
-          throw new Error("expected 2 arguments for remainder");
-        } else {
-          let arg1: number;
-          if (isArray(insideBracesExprs[0])) {
-            if (!isNumber(insideBracesExprs[0][0])) {
-              throw new Error("Expected a number for the first argument of remainder");
-            }
-            arg1 = insideBracesExprs[0][0];
-          } else {
-            if (!isNumber(insideBracesExprs[0])) {
-              throw new Error("Expected a number for the first argument of remainder");
-            }
-            arg1 = insideBracesExprs[0];
-          }
-
-          let arg2: number;
-          if (isArray(insideBracesExprs[1])) {
-            if (!isNumber(insideBracesExprs[1][0])) {
-              throw new Error("Expected a number for the second argument of remainder");
-            }
-            arg2 = insideBracesExprs[1][0];
-          } else {
-            if (!isNumber(insideBracesExprs[1])) {
-              throw new Error("Expected a number for the second argument of remainder");
-            }
-            arg2 = insideBracesExprs[1];
-          }
-
-          // Handle division by zero
-          if (arg2 === 0) {
-            throw new Error("Division by zero is not allowed");
-          }
-
-          // Perform remainder operation with wraparound
-          return bitwidthWraparound(arg1 % arg2, this.bitwidth);
-        }
+      if (beforeBracesExpr === "add" || 
+          beforeBracesExpr === "subtract" || 
+          beforeBracesExpr === "multiply" || 
+          beforeBracesExpr === "divide" || 
+          beforeBracesExpr === "remainder") {
+        return this.evaluateBinaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
       }
 
       if (isTupleArray(beforeBracesExpr)) {
@@ -2003,5 +1821,71 @@ export class ForgeExprEvaluator
     }
 
     return this.visitChildren(ctx);
+  }
+
+  private evaluateBinaryOperation(
+    operation: "add" | "subtract" | "multiply" | "divide" | "remainder",
+    args: EvalResult,
+    bitwidth: number
+  ): number {
+    if (isSingleValue(args)) {
+      throw new Error(`Expected 2 arguments for ${operation}`);
+    }
+
+    let arg1: number;
+    if (isArray(args[0])) {
+      if (!isNumber(args[0][0])) {
+        throw new Error(`Expected a number for the first argument of ${operation}`);
+      }
+      arg1 = args[0][0];
+    } else {
+      if (!isNumber(args[0])) {
+        throw new Error(`Expected a number for the first argument of ${operation}`);
+      }
+      arg1 = args[0];
+    }
+
+    let arg2: number;
+    if (isArray(args[1])) {
+      if (!isNumber(args[1][0])) {
+        throw new Error(`Expected a number for the second argument of ${operation}`);
+      }
+      arg2 = args[1][0];
+    } else {
+      if (!isNumber(args[1])) {
+        throw new Error(`Expected a number for the second argument of ${operation}`);
+      }
+      arg2 = args[1];
+    }
+
+    // Handle division by zero for divide and remainder
+    if ((operation === "divide" || operation === "remainder") && arg2 === 0) {
+      throw new Error("Division by zero is not allowed");
+    }
+
+    // Perform the operation
+    let result: number;
+    switch (operation) {
+      case "add":
+        result = arg1 + arg2;
+        break;
+      case "subtract":
+        result = arg1 - arg2;
+        break;
+      case "multiply":
+        result = arg1 * arg2;
+        break;
+      case "divide":
+        result = Math.floor(arg1 / arg2); // Integer division
+        break;
+      case "remainder":
+        result = arg1 % arg2;
+        break;
+      default:
+        throw new Error(`Unsupported operation: ${operation}`);
+    }
+
+    // Apply bitwidth wraparound
+    return bitwidthWraparound(result, bitwidth);
   }
 }
