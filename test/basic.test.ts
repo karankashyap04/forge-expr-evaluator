@@ -652,6 +652,45 @@ describe("forge-expr-evaluator", () => {
     const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
 
     expect(result).toHaveProperty("error");
+  });
+
+  it("can evaluate absolute value", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr = "abs[-3]";
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual(3);
+
+    const expr2 = "abs[3]";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+    expect(result2).toEqual(3);
   }
   );
+
+  it("can determine the sign of a number", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr = "sign[-3]";
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual(-1);
+
+    const expr2 = "sign[3]";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+    expect(result2).toEqual(1);
+
+    const expr3 = "sign[0]";
+    const result3 = evaluatorUtil.evaluateExpression(expr3, instanceIdx);
+    expect(result3).toEqual(0);
+  });
+
+  // TODO: Perhaps we should have tests with bitwidth becomes a factor.
+
 });
