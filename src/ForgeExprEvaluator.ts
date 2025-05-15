@@ -190,7 +190,7 @@ function bitwidthWraparound(value: number, bitwidth: number): number {
 
 // this is a list of forge builtin functions we currently support; add to this
 // list as we support more
-export const SUPPORTED_BUILTINS = ["add", "subtract"];
+export const SUPPORTED_BUILTINS = ["add", "subtract", "multiply"];
 
 /**
  * A recursive evaluator for Forge expressions.
@@ -1378,6 +1378,42 @@ export class ForgeExprEvaluator
           }
           // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
           return bitwidthWraparound(arg1 - arg2, this.bitwidth);
+        }
+      }
+
+      // multiply
+      if (beforeBracesExpr === "multiply") {
+        if (isSingleValue(insideBracesExprs)) {
+          throw new Error("expected 2 arguments for multiply");
+        } else {
+          let arg1: number;
+          if (isArray(insideBracesExprs[0])) {
+            if (!isNumber(insideBracesExprs[0][0])) {
+              throw new Error("Expected a number for the first argument of multiply");
+            }
+            arg1 = insideBracesExprs[0][0];
+          } else {
+            if (!isNumber(insideBracesExprs[0])) {
+              throw new Error("Expected a number for the first argument of multiply");
+            }
+            arg1 = insideBracesExprs[0];
+          }
+
+          let arg2: number;
+          if (isArray(insideBracesExprs[1])) {
+            if (!isNumber(insideBracesExprs[1][0])) {
+              throw new Error("Expected a number for the second argument of multiply");
+            }
+            arg2 = insideBracesExprs[1][0];
+          } else {
+            if (!isNumber(insideBracesExprs[1])) {
+              throw new Error("Expected a number for the second argument of multiply");
+            }
+            arg2 = insideBracesExprs[1];
+          }
+
+          // Perform multiplication with wraparound
+          return bitwidthWraparound(arg1 * arg2, this.bitwidth);
         }
       }
 
