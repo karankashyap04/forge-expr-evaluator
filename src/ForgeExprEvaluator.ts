@@ -1458,6 +1458,47 @@ export class ForgeExprEvaluator
         }
       }
 
+      // remainder
+      if (beforeBracesExpr === "remainder") {
+        if (isSingleValue(insideBracesExprs)) {
+          throw new Error("expected 2 arguments for remainder");
+        } else {
+          let arg1: number;
+          if (isArray(insideBracesExprs[0])) {
+            if (!isNumber(insideBracesExprs[0][0])) {
+              throw new Error("Expected a number for the first argument of remainder");
+            }
+            arg1 = insideBracesExprs[0][0];
+          } else {
+            if (!isNumber(insideBracesExprs[0])) {
+              throw new Error("Expected a number for the first argument of remainder");
+            }
+            arg1 = insideBracesExprs[0];
+          }
+
+          let arg2: number;
+          if (isArray(insideBracesExprs[1])) {
+            if (!isNumber(insideBracesExprs[1][0])) {
+              throw new Error("Expected a number for the second argument of remainder");
+            }
+            arg2 = insideBracesExprs[1][0];
+          } else {
+            if (!isNumber(insideBracesExprs[1])) {
+              throw new Error("Expected a number for the second argument of remainder");
+            }
+            arg2 = insideBracesExprs[1];
+          }
+
+          // Handle division by zero
+          if (arg2 === 0) {
+            throw new Error("Division by zero is not allowed");
+          }
+
+          // Perform remainder operation with wraparound
+          return bitwidthWraparound(arg1 % arg2, this.bitwidth);
+        }
+      }
+
       if (isTupleArray(beforeBracesExpr)) {
         if (isSingleValue(insideBracesExprs)) {
           results = beforeBracesExpr
