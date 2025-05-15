@@ -590,4 +590,68 @@ describe("forge-expr-evaluator", () => {
 
     expect(result).toHaveProperty("error");
   });
+
+
+  it("implements multiply", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr = "multiply[2,3]";
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual(6);
+  });
+
+  it("implements divide", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr = "divide[6,3]";
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual(2);
+  }
+  );
+
+  it("cannot divide by zero", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr = "divide[6,0]";
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toHaveProperty("error");
+  });
+
+  it("implements remainder", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr = "remainder[6,4]";
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toEqual(2);
+  }
+  );
+
+  it("cannot evaluate remainder with zero", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr = "remainder[6,0]";
+    const result = evaluatorUtil.evaluateExpression(expr, instanceIdx);
+
+    expect(result).toHaveProperty("error");
+  }
+  );
 });
