@@ -118,7 +118,9 @@ function bitwidthWraparound(value, bitwidth) {
 ///// Forge builtin functions we support /////
 // this is a list of forge builtin functions we currently support; add to this
 // list as we support more
-exports.SUPPORTED_BUILTINS = ["add", "subtract"];
+const SUPPORTED_BINARY_BUILTINS = ["add", "subtract", "multiply", "divide", "remainder"];
+const SUPPORTED_UNARY_BUILTINS = ["abs", "sign"];
+exports.SUPPORTED_BUILTINS = SUPPORTED_BINARY_BUILTINS.concat(SUPPORTED_UNARY_BUILTINS);
 /**
  * A recursive evaluator for Forge expressions.
  * This visitor walks the parse tree and prints the type of operation encountered.
@@ -1105,80 +1107,12 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                 return this.callPredicate(predicate, insideBracesExprs);
             }
             // support for some forge-native functions:
-            // add
-            if (beforeBracesExpr === "add") {
-                if (isSingleValue(insideBracesExprs)) {
-                    throw new Error("expected 2 arguments for add");
+            if (isString(beforeBracesExpr)) {
+                if (SUPPORTED_BINARY_BUILTINS.includes(beforeBracesExpr)) {
+                    return this.evaluateBinaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
                 }
-                else {
-                    // const arg1 = getNumberValue(insideBracesExprs[0][0]);
-                    let arg1;
-                    if ((0, lodash_1.isArray)(insideBracesExprs[0])) {
-                        if (!isNumber(insideBracesExprs[0][0])) {
-                            throw new Error("Expected a number for the first argument of add");
-                        }
-                        arg1 = insideBracesExprs[0][0];
-                    }
-                    else {
-                        if (!isNumber(insideBracesExprs[0])) {
-                            throw new Error("Expected a number for the first argument of add");
-                        }
-                        arg1 = insideBracesExprs[0];
-                    }
-                    // const arg2 = getNumberValue(insideBracesExprs[1][0]);
-                    let arg2;
-                    if ((0, lodash_1.isArray)(insideBracesExprs[1])) {
-                        if (!isNumber(insideBracesExprs[1][0])) {
-                            throw new Error("Expected a number for the second argument of add");
-                        }
-                        arg2 = insideBracesExprs[1][0];
-                    }
-                    else {
-                        if (!isNumber(insideBracesExprs[1])) {
-                            throw new Error("Expected a number for the second argument of add");
-                        }
-                        arg2 = insideBracesExprs[1];
-                    }
-                    // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
-                    return bitwidthWraparound(arg1 + arg2, this.bitwidth);
-                }
-            }
-            // subtract
-            if (beforeBracesExpr === "subtract") {
-                if (isSingleValue(insideBracesExprs)) {
-                    throw new Error("expected 2 arguments for subtract");
-                }
-                else {
-                    // const arg1 = getNumberValue(insideBracesExprs[0][0]);
-                    let arg1;
-                    if ((0, lodash_1.isArray)(insideBracesExprs[0])) {
-                        if (!isNumber(insideBracesExprs[0][0])) {
-                            throw new Error("Expected a number for the first argument of subtract");
-                        }
-                        arg1 = insideBracesExprs[0][0];
-                    }
-                    else {
-                        if (!isNumber(insideBracesExprs[0])) {
-                            throw new Error("Expected a number for the first argument of subtract");
-                        }
-                        arg1 = insideBracesExprs[0];
-                    }
-                    // const arg2 = getNumberValue(insideBracesExprs[1][0]);
-                    let arg2;
-                    if ((0, lodash_1.isArray)(insideBracesExprs[1])) {
-                        if (!isNumber(insideBracesExprs[1][0])) {
-                            throw new Error("Expected a number for the second argument of subtract");
-                        }
-                        arg2 = insideBracesExprs[1][0];
-                    }
-                    else {
-                        if (!isNumber(insideBracesExprs[1])) {
-                            throw new Error("Expected a number for the second argument of subtract");
-                        }
-                        arg2 = insideBracesExprs[1];
-                    }
-                    // **UNIMPLEMENTED**: implement wraparound for numerical values (bitwidth)
-                    return bitwidthWraparound(arg1 - arg2, this.bitwidth);
+                else if (SUPPORTED_UNARY_BUILTINS.includes(beforeBracesExpr)) {
+                    return this.evaluateUnaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
                 }
             }
             if (isTupleArray(beforeBracesExpr)) {
@@ -1601,6 +1535,92 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             return intVals;
         }
         return this.visitChildren(ctx);
+    }
+    evaluateBinaryOperation(operation, args, bitwidth) {
+        if (isSingleValue(args)) {
+            throw new Error(`Expected 2 arguments for ${operation}`);
+        }
+        let arg1;
+        if ((0, lodash_1.isArray)(args[0])) {
+            if (!isNumber(args[0][0])) {
+                throw new Error(`Expected a number for the first argument of ${operation}`);
+            }
+            arg1 = args[0][0];
+        }
+        else {
+            if (!isNumber(args[0])) {
+                throw new Error(`Expected a number for the first argument of ${operation}`);
+            }
+            arg1 = args[0];
+        }
+        let arg2;
+        if ((0, lodash_1.isArray)(args[1])) {
+            if (!isNumber(args[1][0])) {
+                throw new Error(`Expected a number for the second argument of ${operation}`);
+            }
+            arg2 = args[1][0];
+        }
+        else {
+            if (!isNumber(args[1])) {
+                throw new Error(`Expected a number for the second argument of ${operation}`);
+            }
+            arg2 = args[1];
+        }
+        // Handle division by zero for divide and remainder
+        if ((operation === "divide" || operation === "remainder") && arg2 === 0) {
+            throw new Error("Division by zero is not allowed");
+        }
+        // Perform the operation
+        let result;
+        switch (operation) {
+            case "add":
+                result = arg1 + arg2;
+                break;
+            case "subtract":
+                result = arg1 - arg2;
+                break;
+            case "multiply":
+                result = arg1 * arg2;
+                break;
+            case "divide":
+                result = Math.floor(arg1 / arg2); // Integer division
+                break;
+            case "remainder":
+                result = arg1 % arg2;
+                break;
+            default:
+                throw new Error(`Unsupported operation: ${operation}`);
+        }
+        // Apply bitwidth wraparound
+        return bitwidthWraparound(result, bitwidth);
+    }
+    evaluateUnaryOperation(operation, args, bitwidth) {
+        if (!isSingleValue(args) || !isNumber(args)) {
+            throw new Error(`Expected 1 argument for ${operation} that evaluates to a number.`);
+        }
+        let wrappedAround = bitwidthWraparound(args, bitwidth);
+        // Possible unary operations:
+        //abs[]: returns the absolute value of value
+        //sign[]: returns 1 if value is > 0, 0 if value is 0, and -1 if value is < 0
+        if (operation === "abs") {
+            let res = Math.abs(wrappedAround);
+            // Now adjust to the bitwidth
+            return res;
+        }
+        else if (operation === "sign") {
+            if (wrappedAround > 0) {
+                return 1;
+            }
+            else if (wrappedAround < 0) {
+                return -1;
+            }
+            else {
+                return 0;
+            }
+        }
+        else {
+            throw new Error(`Unsupported operation: ${operation}`);
+        }
     }
 }
 exports.ForgeExprEvaluator = ForgeExprEvaluator;
