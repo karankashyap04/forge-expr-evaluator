@@ -20,6 +20,20 @@ function isBoolean(value) {
 function isNumber(value) {
     return typeof value === "number";
 }
+function isSingletonNumberTuple(value) {
+    return (Array.isArray(value) &&
+        value.length === 1 &&
+        Array.isArray(value[0]) &&
+        value[0].length === 1 &&
+        typeof value[0][0] === "number");
+}
+function extractNumber(val) {
+    if (isNumber(val))
+        return val;
+    if (isSingletonNumberTuple(val))
+        return val[0][0];
+    return undefined;
+}
 function isString(value) {
     return typeof value === "string";
 }
@@ -752,6 +766,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const rightChildValue = this.visit(ctx.expr7());
             //console.log('left child value:', leftChildValue);
             //console.log('right child value:', rightChildValue);
+            let leftNum = extractNumber(leftChildValue);
+            let rightNum = extractNumber(rightChildValue);
             switch (ctx.compareOp()?.text) {
                 case "=":
                     if (isSingleValue(leftChildValue) && isSingleValue(rightChildValue)) {
@@ -783,28 +799,28 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     }
                     break;
                 case "<":
-                    if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
-                        throw new Error(`Expected the < operator to have 2 number operands, got ${typeof leftChildValue} and ${typeof rightChildValue}!`);
+                    if (leftNum === undefined || rightNum === undefined) {
+                        throw new Error(`Expected the < operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`);
                     }
-                    results = leftChildValue < rightChildValue;
+                    results = leftNum < rightNum;
                     break;
                 case ">":
-                    if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
-                        throw new Error("Expected the > operator to have 2 number operands!");
+                    if (leftNum === undefined || rightNum === undefined) {
+                        throw new Error(`Expected the > operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`);
                     }
-                    results = leftChildValue > rightChildValue;
+                    results = leftNum > rightNum;
                     break;
                 case "<=":
-                    if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
-                        throw new Error("Expected the <= operator to have 2 number operands!");
+                    if (leftNum === undefined || rightNum === undefined) {
+                        throw new Error(`Expected the <= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`);
                     }
-                    results = leftChildValue <= rightChildValue;
+                    results = leftNum <= rightNum;
                     break;
                 case ">=":
-                    if (!isNumber(leftChildValue) || !isNumber(rightChildValue)) {
-                        throw new Error("Expected the >= operator to have 2 number operands!");
+                    if (leftNum === undefined || rightNum === undefined) {
+                        throw new Error(`Expected the >= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`);
                     }
-                    results = leftChildValue >= rightChildValue;
+                    results = leftNum >= rightNum;
                     break;
                 case "in":
                     // this should be true if the left value is equal to the right value,

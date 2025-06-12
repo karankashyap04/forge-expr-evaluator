@@ -693,4 +693,19 @@ describe("forge-expr-evaluator", () => {
 
   // TODO: Perhaps we should have tests with bitwidth becomes a factor.
 
+  it("can compare two singleton set numbers", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "Int.(0->1) < Int.(0->0)";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual(false);
+    const expr2 = "Int.(0->1) > Int.(0->0)";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+
+    expect(result2).toEqual(true);
+
+  });
 });
