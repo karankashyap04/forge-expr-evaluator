@@ -340,7 +340,6 @@ export declare class PredDeclContext extends ParserRuleContext {
     PRED_TOK(): TerminalNode;
     name(): NameContext;
     block(): BlockContext;
-    EOF(): TerminalNode;
     predType(): PredTypeContext | undefined;
     qualName(): QualNameContext | undefined;
     DOT_TOK(): TerminalNode | undefined;
