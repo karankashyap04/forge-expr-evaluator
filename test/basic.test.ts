@@ -708,4 +708,19 @@ describe("forge-expr-evaluator", () => {
     expect(result2).toEqual(true);
 
   });
+
+  it("reports parse errors", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "Int.(0->1";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    
+    // Expect result to be an error
+    expect(result1).toHaveProperty("error");
+
+
+  });
 });

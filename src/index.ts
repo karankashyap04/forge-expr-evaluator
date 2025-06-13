@@ -7,12 +7,24 @@ import { EvalResult, ForgeExprEvaluator } from './ForgeExprEvaluator';
 import { DatumParsed } from './types';
 import { Predicate } from './types';
 import { extractPredicates } from './predicateExtactor';
+import { ParseErrorListener } from './errorListener';
 
 export type ErrorResult = {
   error: Error;
   stackTrace?: string;
 }
 export type EvaluationResult = EvalResult | ErrorResult;
+
+function createForgeParser(input: string): ForgeParser {
+  const inputStream = CharStreams.fromString(input);
+  const lexer = new ForgeLexer(inputStream);
+  const tokenStream = new CommonTokenStream(lexer);
+  const parser = new ForgeParser(tokenStream);
+  parser.buildParseTree = true;
+  parser.removeErrorListeners();
+  parser.addErrorListener(new ParseErrorListener());
+  return parser;
+}
 
 export class ForgeExprEvaluatorUtil {
 
@@ -29,28 +41,20 @@ export class ForgeExprEvaluatorUtil {
   }
 
   getPredParseTree(forgePred: string) {
-    const inputStream = CharStreams.fromString(forgePred);
-    const lexer = new ForgeLexer(inputStream);
-    const tokenStream = new CommonTokenStream(lexer);
-    const parser = new ForgeParser(tokenStream);
-    parser.buildParseTree = true;
-
-    // Parse the input using the new entry point
-    const tree = parser.predDecl();
-
-    return tree;
+    const parser = createForgeParser(forgePred);
+    return parser.predDecl();
   }
 
   getExpressionParseTree(forgeExpr: string) {
-    const inputStream = CharStreams.fromString(forgeExpr);
-    const lexer = new ForgeLexer(inputStream);
-    const tokenStream = new CommonTokenStream(lexer);
-    const parser = new ForgeParser(tokenStream);
-    parser.buildParseTree = true;
-    
-    // Parse the input using the new entry point
+    const parser = createForgeParser(forgeExpr);
     const tree = parser.parseExpr();
     
+    // TODO: Is this wrong?
+    if (!tree || tree.childCount === 0) {
+      throw new Error(`Parse error in ${forgeExpr}`);
+    }
+
+    //////// This is empty on parse error? //TODO//////
     return tree;
   }
 
@@ -68,8 +72,16 @@ export class ForgeExprEvaluatorUtil {
       this.getPredicateParseTrees();
     }
 
-    // now, we can actually evaluate the expression
-    const tree = this.getExpressionParseTree(forgeExpr);
+    try {    // now, we can actually evaluate the expression
+      var tree = this.getExpressionParseTree(forgeExpr);
+    }
+    catch (e) {
+      // if we can't parse the expression, we return an error
+      return {
+        error: new Error(`Error parsing expression "${forgeExpr}"`)
+      };
+    }
+
     const evaluator = new ForgeExprEvaluator(this.datum, instanceIndex, this.predicates);
 
     try {

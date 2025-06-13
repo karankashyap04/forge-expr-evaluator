@@ -8,6 +8,17 @@ const ForgeListenerImpl_1 = require("./forge-antlr/ForgeListenerImpl");
 const ParseTreeWalker_1 = require("antlr4ts/tree/ParseTreeWalker");
 const ForgeExprEvaluator_1 = require("./ForgeExprEvaluator");
 const predicateExtactor_1 = require("./predicateExtactor");
+const errorListener_1 = require("./errorListener");
+function createForgeParser(input) {
+    const inputStream = antlr4ts_1.CharStreams.fromString(input);
+    const lexer = new ForgeLexer_1.ForgeLexer(inputStream);
+    const tokenStream = new antlr4ts_1.CommonTokenStream(lexer);
+    const parser = new ForgeParser_1.ForgeParser(tokenStream);
+    parser.buildParseTree = true;
+    parser.removeErrorListeners();
+    parser.addErrorListener(new errorListener_1.ParseErrorListener());
+    return parser;
+}
 class ForgeExprEvaluatorUtil {
     constructor(datum, sourceCode) {
         this.forgeListener = new ForgeListenerImpl_1.ForgeListenerImpl();
@@ -17,23 +28,17 @@ class ForgeExprEvaluatorUtil {
         this.gotPredicateParseTrees = false;
     }
     getPredParseTree(forgePred) {
-        const inputStream = antlr4ts_1.CharStreams.fromString(forgePred);
-        const lexer = new ForgeLexer_1.ForgeLexer(inputStream);
-        const tokenStream = new antlr4ts_1.CommonTokenStream(lexer);
-        const parser = new ForgeParser_1.ForgeParser(tokenStream);
-        parser.buildParseTree = true;
-        // Parse the input using the new entry point
-        const tree = parser.predDecl();
-        return tree;
+        const parser = createForgeParser(forgePred);
+        return parser.predDecl();
     }
     getExpressionParseTree(forgeExpr) {
-        const inputStream = antlr4ts_1.CharStreams.fromString(forgeExpr);
-        const lexer = new ForgeLexer_1.ForgeLexer(inputStream);
-        const tokenStream = new antlr4ts_1.CommonTokenStream(lexer);
-        const parser = new ForgeParser_1.ForgeParser(tokenStream);
-        parser.buildParseTree = true;
-        // Parse the input using the new entry point
+        const parser = createForgeParser(forgeExpr);
         const tree = parser.parseExpr();
+        // TODO: Is this wrong?
+        if (!tree || tree.childCount === 0) {
+            throw new Error(`Parse error in ${forgeExpr}`);
+        }
+        //////// This is empty on parse error? //TODO//////
         return tree;
     }
     getPredicateParseTrees() {
@@ -48,8 +53,15 @@ class ForgeExprEvaluatorUtil {
         if (!this.gotPredicateParseTrees) {
             this.getPredicateParseTrees();
         }
-        // now, we can actually evaluate the expression
-        const tree = this.getExpressionParseTree(forgeExpr);
+        try { // now, we can actually evaluate the expression
+            var tree = this.getExpressionParseTree(forgeExpr);
+        }
+        catch (e) {
+            // if we can't parse the expression, we return an error
+            return {
+                error: new Error(`Error parsing expression "${forgeExpr}"`)
+            };
+        }
         const evaluator = new ForgeExprEvaluator_1.ForgeExprEvaluator(this.datum, instanceIndex, this.predicates);
         try {
             // ensure we're visiting an ExprContext
