@@ -51,6 +51,12 @@ export class ForgeExprEvaluatorUtil {
     // Parse the input using the new entry point
     const tree = parser.parseExpr();
     
+    // TODO: Is this wrong?
+    if (!tree || tree.childCount === 0) {
+      throw new Error(`Parse error in ${forgeExpr}`);
+    }
+
+    //////// This is empty on parse error? //TODO//////
     return tree;
   }
 
@@ -68,8 +74,16 @@ export class ForgeExprEvaluatorUtil {
       this.getPredicateParseTrees();
     }
 
-    // now, we can actually evaluate the expression
-    const tree = this.getExpressionParseTree(forgeExpr);
+    try {    // now, we can actually evaluate the expression
+      var tree = this.getExpressionParseTree(forgeExpr);
+    }
+    catch (e) {
+      // if we can't parse the expression, we return an error
+      return {
+        error: new Error(`Error parsing expression "${forgeExpr}"`)
+      };
+    }
+
     const evaluator = new ForgeExprEvaluator(this.datum, instanceIndex, this.predicates);
 
     try {

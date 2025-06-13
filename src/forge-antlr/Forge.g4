@@ -2,7 +2,7 @@ grammar Forge;
 
 options { tokenVocab=ForgeLexer; }
 
-predDecl: PRED_TOK predType? (qualName DOT_TOK)? name paraDecls? block EOF;
+predDecl: PRED_TOK predType? (qualName DOT_TOK)? name paraDecls? block; // EOF;
 parseExpr: expr EOF;
 
 
