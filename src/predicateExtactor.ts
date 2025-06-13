@@ -145,7 +145,7 @@ export function extractPredicates(fileContent: string): Predicate[] {
       pred.endLine,
       pred.startColumn,
       pred.endColumn,
-      fileContent
+      decodedContent
     );
 
     let predBody = getTextBlock(
@@ -153,7 +153,7 @@ export function extractPredicates(fileContent: string): Predicate[] {
       pred.predBlock.endLine,
       pred.predBlock.startColumn,
       pred.predBlock.endColumn,
-      fileContent
+      decodedContent
     );
     let args: string[] | undefined = undefined;
     if (pred.predArgsBlock) {
@@ -162,7 +162,7 @@ export function extractPredicates(fileContent: string): Predicate[] {
         pred.predArgsBlock.endLine,
         pred.predArgsBlock.startColumn,
         pred.predArgsBlock.endColumn,
-        fileContent
+        decodedContent
       );
       
       // If atext starts with [ and ends with ], remove those.
