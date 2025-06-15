@@ -208,7 +208,7 @@ function bitwidthWraparound(value: number, bitwidth: number): number {
 // list as we support more
 
 const SUPPORTED_BINARY_BUILTINS = ["add", "subtract", "multiply", "divide", "remainder"];
-const SUPPORTED_UNARY_BUILTINS :string[] = ["abs", "sign"];
+const SUPPORTED_UNARY_BUILTINS: string[] = ["abs", "sign"];
 
 export const SUPPORTED_BUILTINS = SUPPORTED_BINARY_BUILTINS.concat(
   SUPPORTED_UNARY_BUILTINS
@@ -220,8 +220,7 @@ export const SUPPORTED_BUILTINS = SUPPORTED_BINARY_BUILTINS.concat(
  */
 export class ForgeExprEvaluator
   extends AbstractParseTreeVisitor<EvalResult>
-  implements ForgeVisitor<EvalResult>
-{
+  implements ForgeVisitor<EvalResult> {
   private datum: DatumParsed;
   private instanceIndex: number;
   private instanceData: InstanceData;
@@ -299,8 +298,8 @@ export class ForgeExprEvaluator
         }
         bindings.env[argNames[i]] =
           typeof argValue === "string" ||
-          typeof argValue === "number" ||
-          typeof argValue === "boolean"
+            typeof argValue === "number" ||
+            typeof argValue === "boolean"
             ? argValue
             : [argValue];
       }
@@ -979,38 +978,38 @@ export class ForgeExprEvaluator
           }
           break;
         case "<":
-            if (leftNum === undefined || rightNum === undefined) {
-              throw new Error(
-                `Expected the < operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-              );
-            }
+          if (leftNum === undefined || rightNum === undefined) {
+            throw new Error(
+              `Expected the < operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
+            );
+          }
           results = leftNum < rightNum;
           break;
         case ">":
-            if (leftNum === undefined || rightNum === undefined) {
-              throw new Error(
-                `Expected the > operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-              );
-            }
+          if (leftNum === undefined || rightNum === undefined) {
+            throw new Error(
+              `Expected the > operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
+            );
+          }
           results = leftNum > rightNum;
 
 
           break;
         case "<=":
-            if (leftNum === undefined || rightNum === undefined) {
-              throw new Error(
-                `Expected the <= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-              );
-            }
+          if (leftNum === undefined || rightNum === undefined) {
+            throw new Error(
+              `Expected the <= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
+            );
+          }
           results = leftNum <= rightNum;
           break;
         case ">=":
 
-            if (leftNum === undefined || rightNum === undefined) {
-              throw new Error(
-                `Expected the >= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-              );
-            }
+          if (leftNum === undefined || rightNum === undefined) {
+            throw new Error(
+              `Expected the >= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
+            );
+          }
           results = leftNum >= rightNum;
           break;
         case "in":
@@ -1346,11 +1345,11 @@ export class ForgeExprEvaluator
       }
 
       // support for some forge-native functions:
-      if (isString(beforeBracesExpr)){
-        if(SUPPORTED_BINARY_BUILTINS.includes(beforeBracesExpr)) {
+      if (isString(beforeBracesExpr)) {
+        if (SUPPORTED_BINARY_BUILTINS.includes(beforeBracesExpr)) {
           return this.evaluateBinaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
         }
-        else if(SUPPORTED_UNARY_BUILTINS.includes(beforeBracesExpr)) {
+        else if (SUPPORTED_UNARY_BUILTINS.includes(beforeBracesExpr)) {
           return this.evaluateUnaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
         }
       }
@@ -1412,14 +1411,29 @@ export class ForgeExprEvaluator
     }
 
     if (ctx.LEFT_SQUARE_TOK()) {
+      // Evaluate the relation (before the brackets) and the selector (inside the brackets)
       const beforeBracesName = this.visit(ctx.name()!);
       const insideBracesExprs = this.visit(ctx.exprList()!);
-      results.push(["**UNIMPLEMENTED** _[_]"]);
 
-      // TODO: we need to implement this using beforeBracesName and
-      //       insideBracesExprs and then return the result
-      //       just returning results here for now
-      return results;
+      if (isTupleArray(beforeBracesName)) {
+        if (isSingleValue(insideBracesExprs)) {
+          // Select tuples whose first element matches insideBracesExprs
+          return beforeBracesName
+            .filter(tuple => tuple[0] === insideBracesExprs)
+            .map(tuple => tuple.slice(1));
+        } else if (isTupleArray(insideBracesExprs)) {
+          // Select tuples whose first element matches any selector in insideBracesExprs
+          return beforeBracesName
+            .filter(tuple =>
+              insideBracesExprs.some(sel => sel.length > 0 && tuple[0] === sel[0])
+            )
+            .map(tuple => tuple.slice(1));
+        } else {
+          throw new Error("Expected the expression inside the brackets to be a single value or tuple array");
+        }
+      } else {
+        throw new Error("Expected the expression before the brackets to be a tuple array (relation)");
+      }
     }
 
     // return results.concat(this.visitChildren(ctx));
@@ -1935,7 +1949,7 @@ export class ForgeExprEvaluator
 
 
 
-    if(!isSingleValue(args) || !isNumber(args)) {
+    if (!isSingleValue(args) || !isNumber(args)) {
       throw new Error(`Expected 1 argument for ${operation} that evaluates to a number.`);
     }
 
