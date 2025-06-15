@@ -709,6 +709,18 @@ describe("forge-expr-evaluator", () => {
 
   });
 
+  it("implements simple box join.", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "((0->1)[Int]) < Int.(0->0)";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual(false);
+
+  });
+
   it("reports parse errors", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);
