@@ -719,6 +719,18 @@ describe("forge-expr-evaluator", () => {
     const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
     expect(result1).toEqual(false);
 
+
+    // I *think*?
+    const expr2 = "Board1[Game.next]";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+
+    expect(areEquivalentTupleArrays(result2, [["Board0"]])).toBe(true);
+
+
+    const expr3 = "(Int.(0->0)) = ((0->0)[Int])";
+    const result3 = evaluatorUtil.evaluateExpression(expr3, instanceIdx);
+    expect(result3).toEqual(true);
+
   });
 
   it("reports parse errors", () => {

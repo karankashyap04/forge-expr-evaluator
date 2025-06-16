@@ -185,6 +185,29 @@ function transitiveClosure(pairs: Tuple[]): Tuple[] {
   return Array.from(transitiveClosure).map((pair) => JSON.parse(pair));
 }
 
+function dotJoin(left: EvalResult, right: EvalResult): EvalResult {
+  const leftExpr = isSingleValue(left) ? [[left]] : left;
+  const rightExpr = isSingleValue(right) ? [[right]] : right;
+
+  const result: Tuple[] = [];
+  leftExpr.forEach((leftTuple) => {
+    rightExpr.forEach((rightTuple) => {
+      if (leftTuple[leftTuple.length - 1] === rightTuple[0]) {
+        result.push([
+          ...leftTuple.slice(0, leftTuple.length - 1),
+          ...rightTuple.slice(1),
+        ]);
+      }
+    });
+  });
+
+  if (result.some(tuple => tuple.length === 0)) {
+    throw new Error("Join would create a relation of arity 0");
+  }
+
+  return result;
+}
+
 function bitwidthWraparound(value: number, bitwidth: number): number {
   const modulus = Math.pow(2, bitwidth); // total number of Int values
   const halfValue = Math.pow(2, bitwidth - 1); // halfway point
@@ -1042,7 +1065,6 @@ export class ForgeExprEvaluator
           //       returning the final value, if required)
           return results;
           break; // redundant, but it won't be once we implement the TODO above
-        // since the return above it will be removed
         default:
           throw new Error(
             `Unexpected compare operator provided: ${ctx.compareOp()?.text}`
@@ -1354,22 +1376,8 @@ export class ForgeExprEvaluator
         }
       }
 
-      if (isTupleArray(beforeBracesExpr)) {
-        if (isSingleValue(insideBracesExprs)) {
-          results = beforeBracesExpr
-            .filter((tuple) => tuple[0] === insideBracesExprs)
-            .map((tuple) => tuple.slice(1));
-          return results;
-        } else {
-          throw new Error(
-            "Expected the expression inside the braces to be a single value (atom)"
-          );
-        }
-      } else {
-        throw new Error(
-          "Expected the expression before the braces to be a tuple array (relation)"
-        );
-      }
+        // Box join: <expr-a>[<expr-b>] == <expr-b> . <expr-a>
+      return dotJoin(insideBracesExprs, beforeBracesExpr);
     }
 
     return this.visitChildren(ctx);
@@ -1388,54 +1396,19 @@ export class ForgeExprEvaluator
       // console.log('beforeExpr:', beforeDotExpr);
       // console.log('afterExpr:', afterDotExpr);
 
-      const leftExpr = isSingleValue(beforeDotExpr) ? [[beforeDotExpr]] : beforeDotExpr;
-      const rightExpr = isSingleValue(afterDotExpr) ? [[afterDotExpr]] : afterDotExpr;
-
-      const result: Tuple[] = [];
-      leftExpr.forEach((leftTuple) => {
-        rightExpr.forEach((rightTuple) => {
-          if (leftTuple[leftTuple.length - 1] === rightTuple[0]) {
-            result.push([
-              ...leftTuple.slice(0, leftTuple.length - 1),
-              ...rightTuple.slice(1),
-            ]);
-          }
-        });
-      });
-
-      if (result.some((tuple) => tuple.length === 0)) {
-        throw new Error("Join would create a relation of arity 0");
-      }
-
-      return result;
+      return dotJoin(beforeDotExpr, afterDotExpr);
     }
 
     if (ctx.LEFT_SQUARE_TOK()) {
-      // Evaluate the relation (before the brackets) and the selector (inside the brackets)
       const beforeBracesName = this.visit(ctx.name()!);
       const insideBracesExprs = this.visit(ctx.exprList()!);
+      results.push(["**UNIMPLEMENTED** _[_]"]);
 
-      if (isTupleArray(beforeBracesName)) {
-        if (isSingleValue(insideBracesExprs)) {
-          // Select tuples whose first element matches insideBracesExprs
-          return beforeBracesName
-            .filter(tuple => tuple[0] === insideBracesExprs)
-            .map(tuple => tuple.slice(1));
-        } else if (isTupleArray(insideBracesExprs)) {
-          // Select tuples whose first element matches any selector in insideBracesExprs
-          return beforeBracesName
-            .filter(tuple =>
-              insideBracesExprs.some(sel => sel.length > 0 && tuple[0] === sel[0])
-            )
-            .map(tuple => tuple.slice(1));
-        } else {
-          throw new Error("Expected the expression inside the brackets to be a single value or tuple array");
-        }
-      } else {
-        throw new Error("Expected the expression before the brackets to be a tuple array (relation)");
-      }
+      // TODO: we need to implement this using beforeBracesName and
+      //       insideBracesExprs and then return the result
+      //       just returning results here for now
+      return results;
     }
-
     // return results.concat(this.visitChildren(ctx));
     return this.visitChildren(ctx);
   }

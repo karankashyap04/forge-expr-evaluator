@@ -115,6 +115,25 @@ function transitiveClosure(pairs) {
     // convert the result back to a Tuple[] and return
     return Array.from(transitiveClosure).map((pair) => JSON.parse(pair));
 }
+function dotJoin(left, right) {
+    const leftExpr = isSingleValue(left) ? [[left]] : left;
+    const rightExpr = isSingleValue(right) ? [[right]] : right;
+    const result = [];
+    leftExpr.forEach((leftTuple) => {
+        rightExpr.forEach((rightTuple) => {
+            if (leftTuple[leftTuple.length - 1] === rightTuple[0]) {
+                result.push([
+                    ...leftTuple.slice(0, leftTuple.length - 1),
+                    ...rightTuple.slice(1),
+                ]);
+            }
+        });
+    });
+    if (result.some(tuple => tuple.length === 0)) {
+        throw new Error("Join would create a relation of arity 0");
+    }
+    return result;
+}
 function bitwidthWraparound(value, bitwidth) {
     const modulus = Math.pow(2, bitwidth); // total number of Int values
     const halfValue = Math.pow(2, bitwidth - 1); // halfway point
@@ -853,7 +872,6 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     //       returning the final value, if required)
                     return results;
                     break; // redundant, but it won't be once we implement the TODO above
-                // since the return above it will be removed
                 default:
                     throw new Error(`Unexpected compare operator provided: ${ctx.compareOp()?.text}`);
             }
@@ -1131,20 +1149,8 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
                     return this.evaluateUnaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
                 }
             }
-            if (isTupleArray(beforeBracesExpr)) {
-                if (isSingleValue(insideBracesExprs)) {
-                    results = beforeBracesExpr
-                        .filter((tuple) => tuple[0] === insideBracesExprs)
-                        .map((tuple) => tuple.slice(1));
-                    return results;
-                }
-                else {
-                    throw new Error("Expected the expression inside the braces to be a single value (atom)");
-                }
-            }
-            else {
-                throw new Error("Expected the expression before the braces to be a tuple array (relation)");
-            }
+            // Box join: <expr-a>[<expr-b>] == <expr-b> . <expr-a>
+            return dotJoin(insideBracesExprs, beforeBracesExpr);
         }
         return this.visitChildren(ctx);
     }
@@ -1159,23 +1165,7 @@ class ForgeExprEvaluator extends AbstractParseTreeVisitor_1.AbstractParseTreeVis
             const afterDotExpr = this.visit(ctx.expr16());
             // console.log('beforeExpr:', beforeDotExpr);
             // console.log('afterExpr:', afterDotExpr);
-            const leftExpr = isSingleValue(beforeDotExpr) ? [[beforeDotExpr]] : beforeDotExpr;
-            const rightExpr = isSingleValue(afterDotExpr) ? [[afterDotExpr]] : afterDotExpr;
-            const result = [];
-            leftExpr.forEach((leftTuple) => {
-                rightExpr.forEach((rightTuple) => {
-                    if (leftTuple[leftTuple.length - 1] === rightTuple[0]) {
-                        result.push([
-                            ...leftTuple.slice(0, leftTuple.length - 1),
-                            ...rightTuple.slice(1),
-                        ]);
-                    }
-                });
-            });
-            if (result.some((tuple) => tuple.length === 0)) {
-                throw new Error("Join would create a relation of arity 0");
-            }
-            return result;
+            return dotJoin(beforeDotExpr, afterDotExpr);
         }
         if (ctx.LEFT_SQUARE_TOK()) {
             const beforeBracesName = this.visit(ctx.name());
