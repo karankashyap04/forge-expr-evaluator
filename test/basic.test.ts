@@ -709,6 +709,30 @@ describe("forge-expr-evaluator", () => {
 
   });
 
+  it("implements simple box join.", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "((0->1)[Int]) < Int.(0->0)";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    expect(result1).toEqual(false);
+
+
+    // I *think*?
+    const expr2 = "Board1[Game.next]";
+    const result2 = evaluatorUtil.evaluateExpression(expr2, instanceIdx);
+
+    expect(areEquivalentTupleArrays(result2, [["Board0"]])).toBe(true);
+
+
+    const expr3 = "(Int.(0->0)) = ((0->0)[Int])";
+    const result3 = evaluatorUtil.evaluateExpression(expr3, instanceIdx);
+    expect(result3).toEqual(true);
+
+  });
+
   it("reports parse errors", () => {
     const datum: DatumParsed = tttDatum;
     const sourceCode = getCodeFromDatum(datum);

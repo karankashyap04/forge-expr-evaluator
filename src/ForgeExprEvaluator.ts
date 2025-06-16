@@ -185,6 +185,29 @@ function transitiveClosure(pairs: Tuple[]): Tuple[] {
   return Array.from(transitiveClosure).map((pair) => JSON.parse(pair));
 }
 
+function dotJoin(left: EvalResult, right: EvalResult): EvalResult {
+  const leftExpr = isSingleValue(left) ? [[left]] : left;
+  const rightExpr = isSingleValue(right) ? [[right]] : right;
+
+  const result: Tuple[] = [];
+  leftExpr.forEach((leftTuple) => {
+    rightExpr.forEach((rightTuple) => {
+      if (leftTuple[leftTuple.length - 1] === rightTuple[0]) {
+        result.push([
+          ...leftTuple.slice(0, leftTuple.length - 1),
+          ...rightTuple.slice(1),
+        ]);
+      }
+    });
+  });
+
+  if (result.some(tuple => tuple.length === 0)) {
+    throw new Error("Join would create a relation of arity 0");
+  }
+
+  return result;
+}
+
 function bitwidthWraparound(value: number, bitwidth: number): number {
   const modulus = Math.pow(2, bitwidth); // total number of Int values
   const halfValue = Math.pow(2, bitwidth - 1); // halfway point
@@ -208,7 +231,7 @@ function bitwidthWraparound(value: number, bitwidth: number): number {
 // list as we support more
 
 const SUPPORTED_BINARY_BUILTINS = ["add", "subtract", "multiply", "divide", "remainder"];
-const SUPPORTED_UNARY_BUILTINS :string[] = ["abs", "sign"];
+const SUPPORTED_UNARY_BUILTINS: string[] = ["abs", "sign"];
 
 export const SUPPORTED_BUILTINS = SUPPORTED_BINARY_BUILTINS.concat(
   SUPPORTED_UNARY_BUILTINS
@@ -220,8 +243,7 @@ export const SUPPORTED_BUILTINS = SUPPORTED_BINARY_BUILTINS.concat(
  */
 export class ForgeExprEvaluator
   extends AbstractParseTreeVisitor<EvalResult>
-  implements ForgeVisitor<EvalResult>
-{
+  implements ForgeVisitor<EvalResult> {
   private datum: DatumParsed;
   private instanceIndex: number;
   private instanceData: InstanceData;
@@ -299,8 +321,8 @@ export class ForgeExprEvaluator
         }
         bindings.env[argNames[i]] =
           typeof argValue === "string" ||
-          typeof argValue === "number" ||
-          typeof argValue === "boolean"
+            typeof argValue === "number" ||
+            typeof argValue === "boolean"
             ? argValue
             : [argValue];
       }
@@ -979,38 +1001,38 @@ export class ForgeExprEvaluator
           }
           break;
         case "<":
-            if (leftNum === undefined || rightNum === undefined) {
-              throw new Error(
-                `Expected the < operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-              );
-            }
+          if (leftNum === undefined || rightNum === undefined) {
+            throw new Error(
+              `Expected the < operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
+            );
+          }
           results = leftNum < rightNum;
           break;
         case ">":
-            if (leftNum === undefined || rightNum === undefined) {
-              throw new Error(
-                `Expected the > operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-              );
-            }
+          if (leftNum === undefined || rightNum === undefined) {
+            throw new Error(
+              `Expected the > operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
+            );
+          }
           results = leftNum > rightNum;
 
 
           break;
         case "<=":
-            if (leftNum === undefined || rightNum === undefined) {
-              throw new Error(
-                `Expected the <= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-              );
-            }
+          if (leftNum === undefined || rightNum === undefined) {
+            throw new Error(
+              `Expected the <= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
+            );
+          }
           results = leftNum <= rightNum;
           break;
         case ">=":
 
-            if (leftNum === undefined || rightNum === undefined) {
-              throw new Error(
-                `Expected the >= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
-              );
-            }
+          if (leftNum === undefined || rightNum === undefined) {
+            throw new Error(
+              `Expected the >= operator to have 2 number operands (number or [[number]]), got ${typeof leftChildValue} and ${typeof rightChildValue}!`
+            );
+          }
           results = leftNum >= rightNum;
           break;
         case "in":
@@ -1043,7 +1065,6 @@ export class ForgeExprEvaluator
           //       returning the final value, if required)
           return results;
           break; // redundant, but it won't be once we implement the TODO above
-        // since the return above it will be removed
         default:
           throw new Error(
             `Unexpected compare operator provided: ${ctx.compareOp()?.text}`
@@ -1346,31 +1367,17 @@ export class ForgeExprEvaluator
       }
 
       // support for some forge-native functions:
-      if (isString(beforeBracesExpr)){
-        if(SUPPORTED_BINARY_BUILTINS.includes(beforeBracesExpr)) {
+      if (isString(beforeBracesExpr)) {
+        if (SUPPORTED_BINARY_BUILTINS.includes(beforeBracesExpr)) {
           return this.evaluateBinaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
         }
-        else if(SUPPORTED_UNARY_BUILTINS.includes(beforeBracesExpr)) {
+        else if (SUPPORTED_UNARY_BUILTINS.includes(beforeBracesExpr)) {
           return this.evaluateUnaryOperation(beforeBracesExpr, insideBracesExprs, this.bitwidth);
         }
       }
 
-      if (isTupleArray(beforeBracesExpr)) {
-        if (isSingleValue(insideBracesExprs)) {
-          results = beforeBracesExpr
-            .filter((tuple) => tuple[0] === insideBracesExprs)
-            .map((tuple) => tuple.slice(1));
-          return results;
-        } else {
-          throw new Error(
-            "Expected the expression inside the braces to be a single value (atom)"
-          );
-        }
-      } else {
-        throw new Error(
-          "Expected the expression before the braces to be a tuple array (relation)"
-        );
-      }
+        // Box join: <expr-a>[<expr-b>] == <expr-b> . <expr-a>
+      return dotJoin(insideBracesExprs, beforeBracesExpr);
     }
 
     return this.visitChildren(ctx);
@@ -1389,26 +1396,7 @@ export class ForgeExprEvaluator
       // console.log('beforeExpr:', beforeDotExpr);
       // console.log('afterExpr:', afterDotExpr);
 
-      const leftExpr = isSingleValue(beforeDotExpr) ? [[beforeDotExpr]] : beforeDotExpr;
-      const rightExpr = isSingleValue(afterDotExpr) ? [[afterDotExpr]] : afterDotExpr;
-
-      const result: Tuple[] = [];
-      leftExpr.forEach((leftTuple) => {
-        rightExpr.forEach((rightTuple) => {
-          if (leftTuple[leftTuple.length - 1] === rightTuple[0]) {
-            result.push([
-              ...leftTuple.slice(0, leftTuple.length - 1),
-              ...rightTuple.slice(1),
-            ]);
-          }
-        });
-      });
-
-      if (result.some((tuple) => tuple.length === 0)) {
-        throw new Error("Join would create a relation of arity 0");
-      }
-
-      return result;
+      return dotJoin(beforeDotExpr, afterDotExpr);
     }
 
     if (ctx.LEFT_SQUARE_TOK()) {
@@ -1421,7 +1409,6 @@ export class ForgeExprEvaluator
       //       just returning results here for now
       return results;
     }
-
     // return results.concat(this.visitChildren(ctx));
     return this.visitChildren(ctx);
   }
@@ -1935,7 +1922,7 @@ export class ForgeExprEvaluator
 
 
 
-    if(!isSingleValue(args) || !isNumber(args)) {
+    if (!isSingleValue(args) || !isNumber(args)) {
       throw new Error(`Expected 1 argument for ${operation} that evaluates to a number.`);
     }
 
