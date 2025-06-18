@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "antlr4ts": "cd src/forge-antlr && antlr4ts -visitor ForgeLexer.g4 Forge.g4 && cd ../.."
   },
   "author": "Karan Kashyap",
   "license": "MIT",
