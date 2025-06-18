@@ -747,4 +747,20 @@ describe("forge-expr-evaluator", () => {
 
 
   });
+
+
+    it("allows $", () => {
+    const datum: DatumParsed = tttDatum;
+    const sourceCode = getCodeFromDatum(datum);
+    const evaluatorUtil = new ForgeExprEvaluatorUtil(datum, sourceCode);
+    const instanceIdx = 0;
+
+    const expr1 = "some a$1, b$2 : Int | (a$1 = b$2 )";
+    const result1 = evaluatorUtil.evaluateExpression(expr1, instanceIdx);
+    
+    // Expect result to be an error
+    expect(result1).toEqual(true);
+
+
+  });
 });
